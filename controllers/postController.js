@@ -107,9 +107,11 @@ exports.createPost = async (req, res) => {
         }
 
         // Upload media to Cloudinary
+        logger.info(`Starting Cloudinary upload for file: ${req.file.path}`);
         const mediaUpload = await cloudinary.uploader.upload(req.file.path, {
             resource_type: 'auto', // Automatically determine resource type (image/video)
         });
+        logger.info(`Cloudinary upload successful: ${mediaUpload.secure_url}`);
 
         // Parse reservation data
         const withReservation = with_reservation === 'true' || with_reservation === true;
@@ -132,10 +134,12 @@ exports.createPost = async (req, res) => {
         }
 
         // Create the post in the database
+        logger.info(`Creating post in database with advertiser_id: ${advertiser_id}, type: ${type}, title: ${title}`);
         const result = await pool.query(
             'INSERT INTO posts (advertiser_id, category_id, type, title, description, price, old_price, expiration_date, with_reservation, reservation_time, reservation_limit, social_media_links, media_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
             [advertiser_id, category_id, type, title, description, price, old_price, parsedExpirationDate, withReservation, parsedReservationTime, parsedReservationLimit, social_media_links || null, mediaUpload.secure_url]
         );
+        logger.info(`Post created in database with ID: ${result.rows[0].id}`);
 
         // Clean up temporary file
         fs.unlink(req.file.path, (err) => {
@@ -145,6 +149,7 @@ exports.createPost = async (req, res) => {
         });
 
         // Get the complete post with category and advertiser info
+        logger.info(`Fetching complete post details for ID: ${result.rows[0].id}`);
         const completePostResult = await pool.query(`
             SELECT 
                 p.*,
@@ -155,6 +160,7 @@ exports.createPost = async (req, res) => {
             JOIN users u ON p.advertiser_id = u.id
             WHERE p.id = $1
         `, [result.rows[0].id]);
+        logger.info(`Complete post details fetched successfully`);
 
         res.status(201).json({
             message: 'Post created successfully',
@@ -162,7 +168,12 @@ exports.createPost = async (req, res) => {
         });
     } catch (error) {
         console.error('Error creating post:', error);
-        res.status(500).json({ error: 'Post creation failed' });
+        logger.error(`Post creation failed: ${error.message}`);
+        logger.error(`Stack trace: ${error.stack}`);
+        res.status(500).json({ 
+            error: 'Post creation failed',
+            details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
     }
 };
 
