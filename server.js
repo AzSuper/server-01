@@ -111,7 +111,7 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
     logger.info(`🚀 Server is running on port ${PORT}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    logger.info(`🌐 Base URL: https://server-final-dmou.onrender.com`);
+    logger.info(`🌐 Base URL: https://server-final-2olj.onrender.com`);
 });
 
 // Graceful shutdown
