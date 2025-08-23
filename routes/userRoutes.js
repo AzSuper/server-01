@@ -3,11 +3,14 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { authenticateToken } = require('../middleware/auth');
 
-// OTP and Authentication Routes
+// Step 1: Send OTP (user enters all data first)
 router.post('/send-otp', userController.sendOTP);
-router.post('/register/normal-user', userController.verifyOTPAndRegisterNormalUser);
-router.post('/register/advertiser', userController.verifyOTPAndRegisterAdvertiser);
-router.post('/login', userController.loginUser);
+
+// Step 2: Verify OTP and create account (all in one step)
+router.post('/verify-otp', userController.verifyOTP);
+
+// Login
+router.post('/login', userController.login);
 
 // Password Reset Routes
 router.post('/forgot-password', userController.forgotPassword);
@@ -15,7 +18,7 @@ router.post('/reset-password', userController.resetPassword);
 
 // Protected Routes (require authentication)
 router.get('/profile', authenticateToken, userController.getUserProfile);
-router.put('/advertiser/profile', authenticateToken, userController.updateAdvertiserProfile);
+router.put('/profile', authenticateToken, userController.updateUserProfile);
 
 // Admin Routes
 router.get('/:id', authenticateToken, userController.getUserById);
@@ -24,6 +27,6 @@ router.get('/:id', authenticateToken, userController.getUserById);
 router.post('/cleanup-otps', userController.cleanupOTPs);
 
 // Get latest OTP for testing (development only)
-router.get('/otp/:phone/:type', userController.getLatestOTP);
+router.get('/otp/:phone/:type/:userType', userController.getLatestOTP);
 
 module.exports = router;

@@ -40,8 +40,11 @@ exports.createPost = async (req, res) => {
 
         // Check if a file was uploaded
         if (!req.file) {
+            logger.error('No file uploaded in request');
             return res.status(400).json({ error: 'No file uploaded' });
         }
+        
+        logger.info(`File uploaded: ${req.file.originalname}, size: ${req.file.size}, path: ${req.file.path}`);
 
         // Validate required fields
         if (!advertiser_id || !type || !title) {
@@ -85,12 +88,14 @@ exports.createPost = async (req, res) => {
         }
 
         // Validate advertiser exists
+        logger.info(`Validating advertiser with ID: ${advertiser_id}`);
         const advertiserResult = await pool.query(
             'SELECT id, role FROM users WHERE id = $1', 
             [advertiser_id]
         );
 
         if (advertiserResult.rows.length === 0) {
+            logger.error(`Advertiser not found with ID: ${advertiser_id}`);
             return res.status(404).json({ 
                 error: 'Advertiser not found' 
             });
@@ -99,15 +104,27 @@ exports.createPost = async (req, res) => {
         // Ensure caller is the same advertiser (or admin)
         const caller = req.user;
         if (!caller) {
+            logger.error('Unauthorized access attempt - no user in request');
             return res.status(401).json({ error: 'Unauthorized' });
         }
+        
         const isAdmin = caller.role === 'admin';
         if (!isAdmin && parseInt(advertiser_id) !== caller.id) {
+            logger.error(`Forbidden: User ${caller.id} trying to create post for advertiser ${advertiser_id}`);
             return res.status(403).json({ error: 'Forbidden: cannot create posts for another advertiser' });
         }
+        
+        logger.info(`Authorization passed for user ${caller.id} creating post for advertiser ${advertiser_id}`);
 
         // Upload media to Cloudinary
         logger.info(`Starting Cloudinary upload for file: ${req.file.path}`);
+        
+        // Validate Cloudinary configuration
+        if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+            logger.error('Cloudinary configuration missing');
+            return res.status(500).json({ error: 'Media upload service not configured' });
+        }
+        
         const mediaUpload = await cloudinary.uploader.upload(req.file.path, {
             resource_type: 'auto', // Automatically determine resource type (image/video)
         });
@@ -135,11 +152,19 @@ exports.createPost = async (req, res) => {
 
         // Create the post in the database
         logger.info(`Creating post in database with advertiser_id: ${advertiser_id}, type: ${type}, title: ${title}`);
-        const result = await pool.query(
-            'INSERT INTO posts (advertiser_id, category_id, type, title, description, price, old_price, expiration_date, with_reservation, reservation_time, reservation_limit, social_media_links, media_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
-            [advertiser_id, category_id, type, title, description, price, old_price, parsedExpirationDate, withReservation, parsedReservationTime, parsedReservationLimit, social_media_links || null, mediaUpload.secure_url]
-        );
-        logger.info(`Post created in database with ID: ${result.rows[0].id}`);
+        
+        let result;
+        try {
+            result = await pool.query(
+                'INSERT INTO posts (advertiser_id, category_id, type, title, description, price, old_price, expiration_date, with_reservation, reservation_time, reservation_limit, social_media_links, media_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
+                [advertiser_id, category_id, type, title, description, price, old_price, parsedExpirationDate, withReservation, parsedReservationTime, parsedReservationLimit, social_media_links || null, mediaUpload.secure_url]
+            );
+            logger.info(`Post created in database with ID: ${result.rows[0].id}`);
+        } catch (dbError) {
+            logger.error(`Database error creating post: ${dbError.message}`);
+            logger.error(`SQL State: ${dbError.code}, Detail: ${dbError.detail}`);
+            throw new Error(`Database operation failed: ${dbError.message}`);
+        }
 
         // Clean up temporary file
         fs.unlink(req.file.path, (err) => {
@@ -154,7 +179,7 @@ exports.createPost = async (req, res) => {
             SELECT 
                 p.*,
                 c.name as category_name,
-                u.name as advertiser_name
+                u.full_name as advertiser_name
             FROM posts p
             LEFT JOIN categories c ON p.category_id = c.id
             JOIN users u ON p.advertiser_id = u.id
@@ -222,14 +247,14 @@ exports.getPosts = async (req, res) => {
             SELECT 
                 p.*,
                 c.name as category_name,
-                u.name as advertiser_name,
+                u.full_name as advertiser_name,
                 COUNT(CASE WHEN r.status = 'active' THEN 1 END) as reservation_count
             FROM posts p
             LEFT JOIN categories c ON p.category_id = c.id
             JOIN users u ON p.advertiser_id = u.id
             LEFT JOIN reservations r ON p.id = r.post_id AND r.status = 'active'
             ${whereClause}
-            GROUP BY p.id, c.name, u.name
+            GROUP BY p.id, c.name, u.full_name
             ORDER BY p.created_at DESC
             LIMIT $${limitParam} OFFSET $${offsetParam}
         `, queryParams);
@@ -272,7 +297,7 @@ exports.getPostDetails = async (req, res) => {
             SELECT 
                 p.*,
                 c.name as category_name,
-                u.name as advertiser_name,
+                u.full_name as advertiser_name,
                 u.email as advertiser_email,
                 COUNT(CASE WHEN r.status = 'active' THEN 1 END) as reservation_count
             FROM posts p
@@ -280,7 +305,7 @@ exports.getPostDetails = async (req, res) => {
             JOIN users u ON p.advertiser_id = u.id
             LEFT JOIN reservations r ON p.id = r.post_id AND r.status = 'active'
             WHERE p.id = $1
-            GROUP BY p.id, c.name, u.name, u.email
+            GROUP BY p.id, c.name, u.full_name, u.email
         `, [id]);
 
         if (result.rows.length > 0) {
@@ -416,7 +441,7 @@ exports.getSavedPosts = async (req, res) => {
                 p.type,
                 p.likes_count,
                 c.name as category_name,
-                u.name as advertiser_name
+                u.full_name as advertiser_name
             FROM saved_posts sp
             JOIN posts p ON sp.post_id = p.id
             LEFT JOIN categories c ON p.category_id = c.id
@@ -500,7 +525,7 @@ exports.getLikedPosts = async (req, res) => {
                 p.type,
                 p.likes_count,
                 c.name as category_name,
-                u.name as advertiser_name
+                u.full_name as advertiser_name
             FROM post_likes pl
             JOIN posts p ON pl.post_id = p.id
             LEFT JOIN categories c ON p.category_id = c.id

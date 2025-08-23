@@ -56,15 +56,15 @@ const optionalAuth = (req, res, next) => {
     }
 };
 
-// Role-based authorization middleware
-const authorizeRoles = (...allowedRoles) => {
+// Type-based authorization middleware
+const authorizeTypes = (...allowedTypes) => {
     return (req, res, next) => {
         try {
-            const userRole = req.user?.role;
-            if (!userRole) {
+            const userType = req.user?.type;
+            if (!userType) {
                 return next(new AppError('Unauthorized', 401));
             }
-            if (!allowedRoles.includes(userRole)) {
+            if (!allowedTypes.includes(userType)) {
                 return next(new AppError('Forbidden: insufficient permissions', 403));
             }
             next();
@@ -83,7 +83,7 @@ const requireSelfOrAdmin = (paramName) => {
             if (!req.user?.id) {
                 return next(new AppError('Unauthorized', 401));
             }
-            if (req.user.role === 'admin') {
+            if (req.user.type === 'admin') {
                 return next();
             }
             if (typeof targetId === 'number' && Number.isFinite(targetId) && req.user.id === targetId) {
@@ -96,4 +96,35 @@ const requireSelfOrAdmin = (paramName) => {
     };
 };
 
-module.exports = { authenticateToken, optionalAuth, authorizeRoles, requireSelfOrAdmin };
+// Ensure only advertisers can access (for post creation, etc.)
+const requireAdvertiser = (req, res, next) => {
+    try {
+        if (req.user?.type !== 'advertiser') {
+            return next(new AppError('Forbidden: only advertisers can access this resource', 403));
+        }
+        next();
+    } catch (error) {
+        next(new AppError('Authorization failed', 403));
+    }
+};
+
+// Ensure only users can access (for certain user-specific features)
+const requireUser = (req, res, next) => {
+    try {
+        if (req.user?.type !== 'user') {
+            return next(new AppError('Forbidden: only users can access this resource', 403));
+        }
+        next();
+    } catch (error) {
+        next(new AppError('Authorization failed', 403));
+    }
+};
+
+module.exports = { 
+    authenticateToken, 
+    optionalAuth, 
+    authorizeTypes, 
+    requireSelfOrAdmin, 
+    requireAdvertiser, 
+    requireUser 
+};

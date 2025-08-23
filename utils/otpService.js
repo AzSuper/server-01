@@ -8,24 +8,24 @@ class OTPService {
     }
 
     // Create OTP record in database
-    static async createOTP(phone, type, expiresInMinutes = 10) {
+    static async createOTP(phone, type, userType, expiresInMinutes = 10) {
         const otp = this.generateOTP();
         const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
         try {
-            // Delete any existing unused OTPs for this phone and type
+            // Delete any existing unused OTPs for this phone, type, and user type
             await pool.query(
-                'DELETE FROM otp_codes WHERE phone = $1 AND type = $2 AND is_used = false',
-                [phone, type]
+                'DELETE FROM otp_codes WHERE phone = $1 AND type = $2 AND user_type = $3 AND is_used = false',
+                [phone, type, userType]
             );
 
             // Insert new OTP
             const result = await pool.query(
-                'INSERT INTO otp_codes (phone, otp_code, type, expires_at) VALUES ($1, $2, $3, $4) RETURNING *',
-                [phone, otp, type, expiresAt]
+                'INSERT INTO otp_codes (phone, otp_code, type, user_type, expires_at) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+                [phone, otp, type, userType, expiresAt]
             );
 
-            logger.info(`OTP created for phone ${phone}, type: ${type}, OTP: ${otp}`);
+            logger.info(`OTP created for phone ${phone}, type: ${type}, user_type: ${userType}, OTP: ${otp}`);
             return result.rows[0];
         } catch (error) {
             logger.error('Error creating OTP:', error);
@@ -34,11 +34,11 @@ class OTPService {
     }
 
     // Verify OTP
-    static async verifyOTP(phone, otp, type) {
+    static async verifyOTP(phone, otp, type, userType) {
         try {
             const result = await pool.query(
-                'SELECT * FROM otp_codes WHERE phone = $1 AND otp_code = $2 AND type = $3 AND is_used = false AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
-                [phone, otp, type]
+                'SELECT * FROM otp_codes WHERE phone = $1 AND otp_code = $2 AND type = $3 AND user_type = $4 AND is_used = false AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
+                [phone, otp, type, userType]
             );
 
             if (result.rows.length === 0) {
@@ -53,7 +53,7 @@ class OTPService {
                 [otpRecord.id]
             );
 
-            logger.info(`OTP verified for phone ${phone}, type: ${type}`);
+            logger.info(`OTP verified for phone ${phone}, type: ${type}, user_type: ${userType}`);
             return { isValid: true, message: 'OTP verified successfully' };
         } catch (error) {
             logger.error('Error verifying OTP:', error);
@@ -77,11 +77,11 @@ class OTPService {
     }
 
     // Get OTP info (for debugging/testing)
-    static async getOTPInfo(phone, type) {
+    static async getOTPInfo(phone, type, userType) {
         try {
             const result = await pool.query(
-                'SELECT * FROM otp_codes WHERE phone = $1 AND type = $2 ORDER BY created_at DESC LIMIT 1',
-                [phone, type]
+                'SELECT * FROM otp_codes WHERE phone = $1 AND type = $2 AND user_type = $3 ORDER BY created_at DESC LIMIT 1',
+                [phone, type, userType]
             );
             return result.rows[0] || null;
         } catch (error) {
@@ -91,15 +91,15 @@ class OTPService {
     }
 
     // Get latest OTP for testing (development only)
-    static async getLatestOTP(phone, type) {
+    static async getLatestOTP(phone, type, userType) {
         try {
             const result = await pool.query(
-                'SELECT otp_code, created_at, expires_at, is_used FROM otp_codes WHERE phone = $1 AND type = $2 ORDER BY created_at DESC LIMIT 1',
-                [phone, type]
+                'SELECT otp_code, created_at, expires_at, is_used FROM otp_codes WHERE phone = $1 AND type = $2 AND user_type = $3 ORDER BY created_at DESC LIMIT 1',
+                [phone, type, userType]
             );
             
             if (result.rows.length === 0) {
-                return { error: 'No OTP found for this phone and type' };
+                return { error: 'No OTP found for this phone, type, and user type' };
             }
             
             const otpRecord = result.rows[0];
@@ -113,6 +113,21 @@ class OTPService {
         } catch (error) {
             logger.error('Error getting latest OTP:', error);
             throw error;
+        }
+    }
+
+    // Check if OTP exists and is valid (for step-by-step flow)
+    static async checkOTPExists(phone, type, userType) {
+        try {
+            const result = await pool.query(
+                'SELECT * FROM otp_codes WHERE phone = $1 AND type = $2 AND user_type = $3 AND is_used = false AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
+                [phone, type, userType]
+            );
+            
+            return result.rows.length > 0;
+        } catch (error) {
+            logger.error('Error checking OTP existence:', error);
+            return false;
         }
     }
 }

@@ -5,14 +5,14 @@ const { logger } = require('../utils/logger');
 const User = require('../models/User');
 const OTPService = require('../utils/otpService');
 
-// Send OTP for phone verification
+// Step 1: Send OTP for phone verification (user enters all data first)
 exports.sendOTP = async (req, res) => {
-    const { phone, type } = req.body;
+    const { fullName, phone, password, profileImage, storeName, storeImage, description, type, userType } = req.body;
 
-    if (!phone || !type) {
+    if (!phone || !type || !userType || !fullName || !password) {
         return res.status(400).json({
-            error: 'Phone number and type are required',
-            required_fields: ['phone', 'type']
+            error: 'Phone number, type, user type, full name, and password are required',
+            required_fields: ['phone', 'type', 'userType', 'fullName', 'password']
         });
     }
 
@@ -22,32 +22,78 @@ exports.sendOTP = async (req, res) => {
         });
     }
 
+    if (!['user', 'advertiser'].includes(userType)) {
+        return res.status(400).json({
+            error: 'User type must be either "user" or "advertiser"'
+        });
+    }
+
+    // For advertisers, store name is required
+    if (userType === 'advertiser' && !storeName) {
+        return res.status(400).json({
+            error: 'Store name is required for advertisers',
+            required_fields: ['storeName']
+        });
+    }
+
     try {
         // For password reset, check if user exists
         if (type === 'password_reset') {
-            const userExists = await User.phoneExists(phone);
+            let userExists = false;
+            if (userType === 'user') {
+                userExists = await User.userPhoneExists(phone);
+            } else {
+                userExists = await User.advertiserPhoneExists(phone);
+            }
+            
             if (!userExists) {
-                return res.status(404).json({ error: 'User not found with this phone number' });
+                return res.status(404).json({ 
+                    error: `${userType} not found with this phone number` 
+                });
             }
         }
 
         // For verification, check if user already exists
         if (type === 'verification') {
-            const userExists = await User.phoneExists(phone);
+            let userExists = false;
+            if (userType === 'user') {
+                userExists = await User.userPhoneExists(phone);
+            } else {
+                userExists = await User.advertiserPhoneExists(phone);
+            }
+            
             if (userExists) {
-                return res.status(409).json({ error: 'User already exists with this phone number' });
+                return res.status(409).json({ 
+                    error: `${userType} already exists with this phone number` 
+                });
             }
         }
 
+        // Store user data temporarily (in production, you might use Redis or session)
+        // For now, we'll store it in the request body and pass it to the next step
+        const userData = {
+            fullName,
+            phone,
+            password,
+            profileImage,
+            storeName,
+            storeImage,
+            description,
+            userType
+        };
+
         // Create OTP
-        const otpRecord = await OTPService.createOTP(phone, type, 10); // 10 minutes expiry
+        const otpRecord = await OTPService.createOTP(phone, type, userType, 10); // 10 minutes expiry
 
         // In a real application, you would send this OTP via SMS
         // For development/testing, we'll return it in the response
         res.json({
             message: 'OTP sent successfully',
             otp: process.env.NODE_ENV === 'development' ? otpRecord.otp_code : undefined,
-            expires_in: '10 minutes'
+            expires_in: '10 minutes',
+            phone: phone,
+            userType: userType,
+            userData: userData // Include user data for the next step
         });
     } catch (error) {
         logger.error('Error sending OTP:', error);
@@ -55,123 +101,100 @@ exports.sendOTP = async (req, res) => {
     }
 };
 
-// Verify OTP and register normal user
-exports.verifyOTPAndRegisterNormalUser = async (req, res) => {
-    const { fullName, phone, password, otp } = req.body;
+// Step 2: Verify OTP and create account (all in one step)
+exports.verifyOTP = async (req, res) => {
+    const { fullName, phone, password, profileImage, storeName, storeImage, description, otp, type, userType } = req.body;
 
-    if (!fullName || !phone || !password || !otp) {
+    if (!phone || !otp || !type || !userType || !fullName || !password) {
         return res.status(400).json({
             error: 'All fields are required',
-            required_fields: ['fullName', 'phone', 'password', 'otp']
+            required_fields: ['phone', 'otp', 'type', 'userType', 'fullName', 'password']
+        });
+    }
+
+    // For advertisers, store name is required
+    if (userType === 'advertiser' && !storeName) {
+        return res.status(400).json({
+            error: 'Store name is required for advertisers',
+            required_fields: ['storeName']
         });
     }
 
     try {
         // Verify OTP
-        const otpVerification = await OTPService.verifyOTP(phone, otp, 'verification');
+        const otpVerification = await OTPService.verifyOTP(phone, otp, type, userType);
+        
         if (!otpVerification.isValid) {
-            return res.status(400).json({ error: otpVerification.message });
+            return res.status(400).json({
+                message: 'OTP verification failed',
+                verified: false,
+                error: otpVerification.message
+            });
         }
 
-        // Check if user already exists
-        const existingUser = await User.findUserByPhone(phone);
-        if (existingUser) {
-            return res.status(409).json({ error: 'User already exists with this phone number' });
+        // OTP is verified, now create the account
+        if (type === 'verification') {
+            // Hash password
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            let user, token;
+
+            if (userType === 'user') {
+                // Create user
+                user = await User.createUser(fullName, phone, hashedPassword, profileImage);
+                // Mark user as verified
+                await User.updateUserVerificationStatus(user.id, true);
+                // Generate JWT
+                token = jwt.sign(
+                    { id: user.id, type: 'user', phone: user.phone },
+                    process.env.JWT_SECRET,
+                    { expiresIn: '7d' }
+                );
+            } else {
+                // Create advertiser
+                user = await User.createAdvertiser(fullName, phone, hashedPassword, storeName, storeImage, description);
+                // Mark advertiser as verified
+                await User.updateAdvertiserVerificationStatus(user.id, true);
+                // Generate JWT
+                token = jwt.sign(
+                    { id: user.id, type: 'advertiser', phone: user.phone },
+                    process.env.JWT_SECRET,
+                    { expiresIn: '7d' }
+                );
+            }
+
+            res.status(201).json({
+                message: `${userType} registered successfully`,
+                user: {
+                    id: user.id,
+                    full_name: user.full_name,
+                    phone: user.phone,
+                    type: userType,
+                    is_verified: true,
+                    profile_image: user.profile_image,
+                    store_name: user.store_name,
+                    store_image: user.store_image,
+                    description: user.description
+                },
+                token
+            });
+        } else {
+            // For password reset, just return success
+            res.json({
+                message: 'OTP verified successfully',
+                verified: true,
+                phone: phone,
+                userType: userType
+            });
         }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create user
-        const user = await User.createNormalUser(fullName, phone, hashedPassword);
-
-        // Mark user as verified
-        await User.updateVerificationStatus(user.id, true);
-
-        // Generate JWT
-        const token = jwt.sign(
-            { id: user.id, role: user.role, phone: user.phone },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
-
-        res.status(201).json({
-            message: 'User registered successfully',
-            user: {
-                id: user.id,
-                full_name: user.full_name,
-                phone: user.phone,
-                role: user.role,
-                is_verified: true
-            },
-            token
-        });
     } catch (error) {
-        logger.error('Error registering normal user:', error);
-        res.status(500).json({ error: 'Registration failed' });
+        logger.error('Error verifying OTP:', error);
+        res.status(500).json({ error: 'OTP verification failed' });
     }
 };
 
-// Verify OTP and register advertiser
-exports.verifyOTPAndRegisterAdvertiser = async (req, res) => {
-    const { fullName, phone, password, storeName, description, otp } = req.body;
-
-    if (!fullName || !phone || !password || !storeName || !otp) {
-        return res.status(400).json({
-            error: 'All fields are required',
-            required_fields: ['fullName', 'phone', 'password', 'storeName', 'otp']
-        });
-    }
-
-    try {
-        // Verify OTP
-        const otpVerification = await OTPService.verifyOTP(phone, otp, 'verification');
-        if (!otpVerification.isValid) {
-            return res.status(400).json({ error: otpVerification.message });
-        }
-
-        // Check if user already exists
-        const existingUser = await User.findUserByPhone(phone);
-        if (existingUser) {
-            return res.status(409).json({ error: 'User already exists with this phone number' });
-        }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create advertiser with profile
-        const advertiser = await User.createAdvertiser(fullName, phone, hashedPassword, storeName, description);
-
-        // Mark user as verified
-        await User.updateVerificationStatus(advertiser.id, true);
-
-        // Generate JWT
-        const token = jwt.sign(
-            { id: advertiser.id, role: advertiser.role, phone: advertiser.phone },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
-
-        res.status(201).json({
-            message: 'Advertiser registered successfully',
-            user: {
-                id: advertiser.id,
-                full_name: advertiser.full_name,
-                phone: advertiser.phone,
-                role: advertiser.role,
-                is_verified: true,
-                advertiser_profile: advertiser.advertiser_profile
-            },
-            token
-        });
-    } catch (error) {
-        logger.error('Error registering advertiser:', error);
-        res.status(500).json({ error: 'Registration failed' });
-    }
-};
-
-// Login with phone and password
-exports.loginUser = async (req, res) => {
+// Login for both user types
+exports.login = async (req, res) => {
     const { phone, password } = req.body;
 
     if (!phone || !password) {
@@ -182,14 +205,19 @@ exports.loginUser = async (req, res) => {
     }
 
     try {
-        const user = await User.findUserByPhone(phone);
-
-        if (!user) {
+        // Check if user exists and get their type
+        const userTypeInfo = await User.getUserTypeByPhone(phone);
+        
+        if (!userTypeInfo) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
+        const { type, user } = userTypeInfo;
+
         if (!user.is_verified) {
-            return res.status(401).json({ error: 'Account not verified. Please verify your phone number first.' });
+            return res.status(401).json({ 
+                error: 'Account not verified. Please verify your phone number first.' 
+            });
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password_hash);
@@ -199,15 +227,17 @@ exports.loginUser = async (req, res) => {
 
         // Generate JWT
         const token = jwt.sign(
-            { id: user.id, role: user.role, phone: user.phone },
+            { id: user.id, type: type, phone: user.phone },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
-        // Get user with profile if advertiser
+        // Get user with profile
         let userWithProfile = user;
-        if (user.role === 'advertiser') {
+        if (type === 'user') {
             userWithProfile = await User.getUserWithProfile(user.id);
+        } else {
+            userWithProfile = await User.getAdvertiserWithProfile(user.id);
         }
 
         res.json({
@@ -216,11 +246,12 @@ exports.loginUser = async (req, res) => {
                 id: userWithProfile.id,
                 full_name: userWithProfile.full_name,
                 phone: userWithProfile.phone,
-                role: userWithProfile.role,
+                type: type,
                 is_verified: userWithProfile.is_verified,
+                profile_image: userWithProfile.profile_image,
                 store_name: userWithProfile.store_name,
-                description: userWithProfile.description,
-                social_media_links: userWithProfile.social_media_links
+                store_image: userWithProfile.store_image,
+                description: userWithProfile.description
             },
             token
         });
@@ -232,29 +263,45 @@ exports.loginUser = async (req, res) => {
 
 // Forgot password - send OTP
 exports.forgotPassword = async (req, res) => {
-    const { phone } = req.body;
+    const { phone, userType } = req.body;
 
-    if (!phone) {
+    if (!phone || !userType) {
         return res.status(400).json({
-            error: 'Phone number is required',
-            required_fields: ['phone']
+            error: 'Phone number and user type are required',
+            required_fields: ['phone', 'userType']
+        });
+    }
+
+    if (!['user', 'advertiser'].includes(userType)) {
+        return res.status(400).json({
+            error: 'User type must be either "user" or "advertiser"'
         });
     }
 
     try {
         // Check if user exists
-        const userExists = await User.phoneExists(phone);
+        let userExists = false;
+        if (userType === 'user') {
+            userExists = await User.userPhoneExists(phone);
+        } else {
+            userExists = await User.advertiserPhoneExists(phone);
+        }
+        
         if (!userExists) {
-            return res.status(404).json({ error: 'User not found with this phone number' });
+            return res.status(404).json({ 
+                error: `${userType} not found with this phone number` 
+            });
         }
 
         // Send OTP for password reset
-        const otpRecord = await OTPService.createOTP(phone, 'password_reset', 10);
+        const otpRecord = await OTPService.createOTP(phone, 'password_reset', userType, 10);
 
         res.json({
             message: 'Password reset OTP sent successfully',
             otp: process.env.NODE_ENV === 'development' ? otpRecord.otp_code : undefined,
-            expires_in: '10 minutes'
+            expires_in: '10 minutes',
+            phone: phone,
+            userType: userType
         });
     } catch (error) {
         logger.error('Error in forgot password:', error);
@@ -264,33 +311,43 @@ exports.forgotPassword = async (req, res) => {
 
 // Reset password with OTP
 exports.resetPassword = async (req, res) => {
-    const { phone, otp, newPassword } = req.body;
+    const { phone, otp, newPassword, userType } = req.body;
 
-    if (!phone || !otp || !newPassword) {
+    if (!phone || !otp || !newPassword || !userType) {
         return res.status(400).json({
             error: 'All fields are required',
-            required_fields: ['phone', 'otp', 'newPassword']
+            required_fields: ['phone', 'otp', 'newPassword', 'userType']
         });
     }
 
     try {
         // Verify OTP
-        const otpVerification = await OTPService.verifyOTP(phone, otp, 'password_reset');
+        const otpVerification = await OTPService.verifyOTP(phone, otp, 'password_reset', userType);
         if (!otpVerification.isValid) {
             return res.status(400).json({ error: otpVerification.message });
         }
 
         // Find user
-        const user = await User.findUserByPhone(phone);
+        let user = null;
+        if (userType === 'user') {
+            user = await User.findUserByPhone(phone);
+        } else {
+            user = await User.findAdvertiserByPhone(phone);
+        }
+        
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: `${userType} not found` });
         }
 
         // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
         // Update password
-        await User.updatePassword(user.id, hashedPassword);
+        if (userType === 'user') {
+            await User.updateUserPassword(user.id, hashedPassword);
+        } else {
+            await User.updateAdvertiserPassword(user.id, hashedPassword);
+        }
 
         res.json({
             message: 'Password reset successfully'
@@ -304,9 +361,16 @@ exports.resetPassword = async (req, res) => {
 // Get user profile
 exports.getUserProfile = async (req, res) => {
     const userId = req.user.id;
+    const userType = req.user.type;
 
     try {
-        const user = await User.getUserWithProfile(userId);
+        let user = null;
+        if (userType === 'user') {
+            user = await User.getUserWithProfile(userId);
+        } else {
+            user = await User.getAdvertiserWithProfile(userId);
+        }
+        
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -316,11 +380,18 @@ exports.getUserProfile = async (req, res) => {
                 id: user.id,
                 full_name: user.full_name,
                 phone: user.phone,
-                role: user.role,
+                type: userType,
                 is_verified: user.is_verified,
+                profile_image: user.profile_image,
                 store_name: user.store_name,
+                store_image: user.store_image,
                 description: user.description,
-                social_media_links: user.social_media_links
+                display_name: user.display_name,
+                bio: user.bio,
+                website: user.website,
+                location: user.location,
+                social_links: user.social_links,
+                metadata: user.metadata
             }
         });
     } catch (error) {
@@ -329,24 +400,26 @@ exports.getUserProfile = async (req, res) => {
     }
 };
 
-// Update advertiser profile
-exports.updateAdvertiserProfile = async (req, res) => {
+// Update user profile
+exports.updateUserProfile = async (req, res) => {
     const userId = req.user.id;
-    const { storeName, description, socialMediaLinks } = req.body;
-
-    if (req.user.role !== 'advertiser') {
-        return res.status(403).json({ error: 'Only advertisers can update advertiser profile' });
-    }
+    const userType = req.user.type;
+    const { displayName, bio, website, location, socialLinks, metadata } = req.body;
 
     try {
-        const profile = await User.updateAdvertiserProfile(userId, storeName, description, socialMediaLinks);
+        let profile = null;
+        if (userType === 'user') {
+            profile = await User.updateUserProfile(userId, displayName, bio, website, location, socialLinks, metadata);
+        } else {
+            profile = await User.updateAdvertiserProfile(userId, displayName, bio, website, location, socialLinks, metadata);
+        }
 
         res.json({
             message: 'Profile updated successfully',
             profile
         });
     } catch (error) {
-        logger.error('Error updating advertiser profile:', error);
+        logger.error('Error updating profile:', error);
         res.status(500).json({ error: 'Failed to update profile' });
     }
 };
@@ -354,11 +427,24 @@ exports.updateAdvertiserProfile = async (req, res) => {
 // Get user by ID (admin only)
 exports.getUserById = async (req, res) => {
     const { id } = req.params;
+    const { userType } = req.query;
+
+    if (!userType || !['user', 'advertiser'].includes(userType)) {
+        return res.status(400).json({
+            error: 'User type query parameter is required and must be "user" or "advertiser"'
+        });
+    }
 
     try {
-        const user = await User.getUserWithProfile(id);
+        let user = null;
+        if (userType === 'user') {
+            user = await User.getUserWithProfile(id);
+        } else {
+            user = await User.getAdvertiserWithProfile(id);
+        }
+        
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: `${userType} not found` });
         }
 
         res.json({
@@ -366,11 +452,18 @@ exports.getUserById = async (req, res) => {
                 id: user.id,
                 full_name: user.full_name,
                 phone: user.phone,
-                role: user.role,
+                type: userType,
                 is_verified: user.is_verified,
+                profile_image: user.profile_image,
                 store_name: user.store_name,
+                store_image: user.store_image,
                 description: user.description,
-                social_media_links: user.social_media_links
+                display_name: user.display_name,
+                bio: user.bio,
+                website: user.website,
+                location: user.location,
+                social_links: user.social_links,
+                metadata: user.metadata
             }
         });
     } catch (error) {
@@ -393,16 +486,16 @@ exports.cleanupOTPs = async (req, res) => {
 // Get latest OTP for testing (development only)
 exports.getLatestOTP = async (req, res) => {
     try {
-        const { phone, type } = req.params;
+        const { phone, type, userType } = req.params;
         
-        if (!phone || !type) {
+        if (!phone || !type || !userType) {
             return res.status(400).json({
                 success: false,
-                message: 'Phone number and OTP type are required'
+                message: 'Phone number, OTP type, and user type are required'
             });
         }
 
-        const otpInfo = await OTPService.getLatestOTP(phone, type);
+        const otpInfo = await OTPService.getLatestOTP(phone, type, userType);
         
         if (otpInfo.error) {
             return res.status(404).json({

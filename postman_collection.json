@@ -1,17 +1,17 @@
 {
 	"info": {
-		"_postman_id": "flutter-backend-api",
-		"name": "ADLEVERY",
-		"description": "Complete API collection for Flutter Backend with phone-based authentication, OTP verification, posts, likes, reservations, and user management.",
+		"_postman_id": "new-auth-flow-collection",
+		"name": "Flutter Backend API - New Authentication Flow",
+		"description": "Complete API collection for the new authentication system with separate user and advertiser flows, OTP verification, and comprehensive endpoint coverage.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "flutter-backend"
+		"_exporter_id": "12345678"
 	},
 	"item": [
 		{
 			"name": "🔐 Authentication",
 			"item": [
 				{
-					"name": "Send OTP for Verification",
+					"name": "Step 1: Send OTP - User (with all data)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -22,25 +22,19 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"phone\": \"+963939318337\",\n    \"type\": \"verification\"\n}"
+							"raw": "{\n  \"fullName\": \"John Doe\",\n  \"phone\": \"+1234567890\",\n  \"password\": \"securepassword123\",\n  \"profileImage\": \"https://example.com/profile.jpg\",\n  \"type\": \"verification\",\n  \"userType\": \"user\"\n}"
 						},
 						"url": {
-							"raw": "{{BASE_URL}}/api/users/send-otp",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"send-otp"
-							]
+							"raw": "{{base_url}}/api/users/send-otp",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "send-otp"]
 						},
-						"description": "Send OTP for phone verification during registration"
+						"description": "User enters all data first, then sends OTP for verification. This is the first step in the user registration process."
 					},
 					"response": []
 				},
 				{
-					"name": "Register Normal User",
+					"name": "Step 1: Send OTP - Advertiser (with all data)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -51,26 +45,19 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"fullName\": \"Test User\",\n    \"phone\": \"+963939318337\",\n    \"password\": \"password123\",\n    \"otp\": \"123456\"\n}"
+							"raw": "{\n  \"fullName\": \"Jane Smith\",\n  \"phone\": \"+1234567891\",\n  \"password\": \"securepassword123\",\n  \"storeName\": \"Smith's Electronics\",\n  \"storeImage\": \"https://example.com/store.jpg\",\n  \"description\": \"Best electronics store in town\",\n  \"type\": \"verification\",\n  \"userType\": \"advertiser\"\n}"
 						},
 						"url": {
-							"raw": "{{BASE_URL}}/api/users/register/normal-user",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"register",
-								"normal-user"
-							]
+							"raw": "{{base_url}}/api/users/send-otp",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "send-otp"]
 						},
-						"description": "Register a new normal user with OTP verification"
+						"description": "Advertiser enters all data first, then sends OTP for verification. This is the first step in the advertiser registration process."
 					},
 					"response": []
 				},
 				{
-					"name": "Register Advertiser",
+					"name": "Step 2: Verify OTP - User",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -81,21 +68,37 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"fullName\": \"Test Advertiser\",\n    \"phone\": \"+963939318337\",\n    \"password\": \"password123\",\n    \"storeName\": \"Test Store\",\n    \"description\": \"Best store in town\",\n    \"otp\": \"123456\"\n}"
+							"raw": "{\n  \"fullName\": \"John Doe\",\n  \"phone\": \"+1234567890\",\n  \"password\": \"securepassword123\",\n  \"profileImage\": \"https://example.com/profile.jpg\",\n  \"otp\": \"123456\",\n  \"type\": \"verification\",\n  \"userType\": \"user\"\n}"
 						},
 						"url": {
-							"raw": "{{BASE_URL}}/api/users/register/advertiser",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"register",
-								"advertiser"
-							]
+							"raw": "{{base_url}}/api/users/verify-otp",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "verify-otp"]
 						},
-						"description": "Register a new advertiser with store information"
+						"description": "Verify OTP for user registration with all user data. This creates the user account and returns a token."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2: Verify OTP - Advertiser",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"Jane Smith\",\n  \"phone\": \"+1234567891\",\n  \"password\": \"securepassword123\",\n  \"storeName\": \"Smith's Electronics\",\n  \"storeImage\": \"https://example.com/store.jpg\",\n  \"description\": \"Best electronics store in town\",\n  \"otp\": \"123456\",\n  \"type\": \"verification\",\n  \"userType\": \"advertiser\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/verify-otp",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "verify-otp"]
+						},
+						"description": "Verify OTP for advertiser registration with all advertiser data. This creates the advertiser account and returns a token."
 					},
 					"response": []
 				},
@@ -111,105 +114,117 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"phone\": \"+963939318337\",\n    \"password\": \"password123\"\n}"
+							"raw": "{\n  \"phone\": \"+1234567890\",\n  \"password\": \"securepassword123\"\n}"
 						},
 						"url": {
-							"raw": "{{BASE_URL}}/api/users/login",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"login"
-							]
+							"raw": "{{base_url}}/api/users/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "login"]
 						},
-						"description": "Login with phone and password"
-					},
-					"response": []
-				},
-				{
-					"name": "Forgot Password",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"phone\": \"+963939318337\"\n}"
-						},
-						"url": {
-							"raw": "{{BASE_URL}}/api/users/forgot-password",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"forgot-password"
-							]
-						},
-						"description": "Send OTP for password reset"
-					},
-					"response": []
-				},
-				{
-					"name": "Reset Password",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"phone\": \"+963939318337\",\n    \"otp\": \"123456\",\n    \"newPassword\": \"newpassword123\"\n}"
-						},
-						"url": {
-							"raw": "{{BASE_URL}}/api/users/reset-password",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"reset-password"
-							]
-						},
-						"description": "Reset password using OTP"
-					},
-					"response": []
-				},
-				{
-					"name": "Get Latest OTP (Testing)",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{BASE_URL}}/api/users/otp/+963939318337/verification",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"otp",
-								"+963939318337",
-								"verification"
-							]
-						},
-						"description": "Get the latest OTP for testing (development only)"
+						"description": "Login with phone number and password. Works for both users and advertisers."
 					},
 					"response": []
 				}
 			],
-			"description": "Authentication endpoints for user registration, login, and password management"
+			"description": "Complete authentication flow: User enters all data first, then sends OTP, verifies OTP, and gets token for login."
+		},
+		{
+			"name": "🔑 Password Reset",
+			"item": [
+				{
+					"name": "Request Password Reset - User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+1234567890\",\n  \"userType\": \"user\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/forgot-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "forgot-password"]
+						},
+						"description": "Request password reset OTP for a user account."
+					},
+					"response": []
+				},
+				{
+					"name": "Request Password Reset - Advertiser",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+1234567891\",\n  \"userType\": \"advertiser\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/forgot-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "forgot-password"]
+						},
+						"description": "Request password reset OTP for an advertiser account."
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password - User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+1234567890\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\",\n  \"userType\": \"user\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/reset-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "reset-password"]
+						},
+						"description": "Reset user password using OTP verification."
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password - Advertiser",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+1234567891\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\",\n  \"userType\": \"advertiser\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/reset-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "reset-password"]
+						},
+						"description": "Reset advertiser password using OTP verification."
+					},
+					"response": []
+				}
+			],
+			"description": "Password reset functionality for both user types using OTP verification."
 		},
 		{
 			"name": "👤 User Management",
@@ -221,32 +236,26 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
+								"value": "Bearer {{auth_token}}"
 							}
 						],
 						"url": {
-							"raw": "{{BASE_URL}}/api/users/profile",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"profile"
-							]
+							"raw": "{{base_url}}/api/users/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "profile"]
 						},
-						"description": "Get current user's profile information"
+						"description": "Get the authenticated user's profile information."
 					},
 					"response": []
 				},
 				{
-					"name": "Update Advertiser Profile",
+					"name": "Update User Profile",
 					"request": {
 						"method": "PUT",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
+								"value": "Bearer {{auth_token}}"
 							},
 							{
 								"key": "Content-Type",
@@ -255,117 +264,109 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"storeName\": \"Updated Store Name\",\n    \"description\": \"Updated store description\",\n    \"socialMediaLinks\": {\n        \"instagram\": \"https://instagram.com/store\",\n        \"facebook\": \"https://facebook.com/store\",\n        \"twitter\": \"https://twitter.com/store\"\n    }\n}"
+							"raw": "{\n  \"displayName\": \"John Doe\",\n  \"bio\": \"Tech enthusiast and developer\",\n  \"website\": \"https://johndoe.com\",\n  \"location\": \"New York\",\n  \"socialLinks\": {\n    \"instagram\": \"@johndoe\",\n    \"twitter\": \"@johndoe\"\n  },\n  \"metadata\": {\n    \"preferences\": {\n      \"theme\": \"dark\",\n      \"notifications\": true\n    }\n  }\n}"
 						},
 						"url": {
-							"raw": "{{BASE_URL}}/api/users/advertiser/profile",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"advertiser",
-								"profile"
-							]
+							"raw": "{{base_url}}/api/users/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "profile"]
 						},
-						"description": "Update advertiser profile information"
+						"description": "Update the authenticated user's profile information."
 					},
 					"response": []
 				},
 				{
-					"name": "Get User by ID",
+					"name": "Get User by ID (Admin)",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
+								"value": "Bearer {{auth_token}}"
 							}
 						],
 						"url": {
-							"raw": "{{BASE_URL}}/api/users/1",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"1"
+							"raw": "{{base_url}}/api/users/1?userType=user",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "1"],
+							"query": [
+								{
+									"key": "userType",
+									"value": "user"
+								}
 							]
 						},
-						"description": "Get user by ID (admin only)"
+						"description": "Get user information by ID. Requires authentication and userType query parameter."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Advertiser by ID (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/users/1?userType=advertiser",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "1"],
+							"query": [
+								{
+									"key": "userType",
+									"value": "advertiser"
+								}
+							]
+						},
+						"description": "Get advertiser information by ID. Requires authentication and userType query parameter."
 					},
 					"response": []
 				}
 			],
-			"description": "User profile and management endpoints"
+			"description": "User profile management and information retrieval endpoints."
 		},
 		{
 			"name": "📝 Posts",
 			"item": [
 				{
-					"name": "Create Reel Post",
+					"name": "Get All Posts",
 					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "advertiser_id",
-									"value": "1",
-									"type": "text"
-								},
-								{
-									"key": "category_id",
-									"value": "1",
-									"type": "text"
-								},
-								{
-									"key": "type",
-									"value": "reel",
-									"type": "text"
-								},
-								{
-									"key": "description",
-									"value": "Amazing product video",
-									"type": "text"
-								},
-								{
-									"key": "media",
-									"type": "file",
-									"src": []
-								}
-							]
-						},
+						"method": "GET",
+						"header": [],
 						"url": {
-							"raw": "{{BASE_URL}}/api/posts",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts"
-							]
+							"raw": "{{base_url}}/api/posts",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts"]
 						},
-						"description": "Create a new reel post with video media"
+						"description": "Retrieve all posts with optional filtering and pagination."
 					},
 					"response": []
 				},
 				{
-					"name": "Create Post",
+					"name": "Get Post by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/posts/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts", "1"]
+						},
+						"description": "Retrieve a specific post by its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Post (Advertiser Only)",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
+								"value": "Bearer {{auth_token}}"
 							}
 						],
 						"body": {
@@ -393,7 +394,7 @@
 								},
 								{
 									"key": "description",
-									"value": "Product description",
+									"value": "This is an amazing product description",
 									"type": "text"
 								},
 								{
@@ -418,7 +419,7 @@
 								},
 								{
 									"key": "reservation_time",
-									"value": "2024-12-25T10:00:00Z",
+									"value": "2024-12-25T12:00:00Z",
 									"type": "text"
 								},
 								{
@@ -439,241 +440,76 @@
 							]
 						},
 						"url": {
-							"raw": "{{BASE_URL}}/api/posts",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts"
-							]
+							"raw": "{{base_url}}/api/posts",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts"]
 						},
-						"description": "Create a new post with image media and product details"
+						"description": "Create a new post. Only advertisers can create posts. Supports both images and videos."
 					},
 					"response": []
 				},
 				{
-					"name": "Get All Posts",
+					"name": "Create Reel (Advertiser Only)",
 					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{BASE_URL}}/api/posts?category_id=1&type=post&page=1&limit=10",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts"
-							],
-							"query": [
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "advertiser_id",
+									"value": "1",
+									"type": "text"
+								},
 								{
 									"key": "category_id",
-									"value": "1"
+									"value": "1",
+									"type": "text"
 								},
 								{
 									"key": "type",
-									"value": "post"
+									"value": "reel",
+									"type": "text"
 								},
 								{
-									"key": "page",
-									"value": "1"
+									"key": "title",
+									"value": "Amazing Product Video",
+									"type": "text"
 								},
 								{
-									"key": "limit",
-									"value": "10"
+									"key": "description",
+									"value": "This is an amazing product video description",
+									"type": "text"
+								},
+								{
+									"key": "media",
+									"type": "file",
+									"src": []
 								}
 							]
 						},
-						"description": "Get all posts with optional filtering and pagination"
+						"url": {
+							"raw": "{{base_url}}/api/posts",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts"]
+						},
+						"description": "Create a new reel (video post). Only advertisers can create reels."
 					},
 					"response": []
 				},
 				{
-					"name": "Get Post Details",
+					"name": "Update Post",
 					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{BASE_URL}}/api/posts/1",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts",
-								"1"
-							]
-						},
-						"description": "Get detailed information about a specific post"
-					},
-					"response": []
-				},
-				{
-					"name": "Get Posts by Advertiser",
-					"request": {
-						"method": "GET",
+						"method": "PUT",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
-							}
-						],
-						"url": {
-							"raw": "{{BASE_URL}}/api/posts/advertiser/1?page=1&limit=10",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts",
-								"advertiser",
-								"1"
-							],
-							"query": [
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "limit",
-									"value": "10"
-								}
-							]
-						},
-						"description": "Get all posts by a specific advertiser"
-					},
-					"response": []
-				},
-				{
-					"name": "Get Post Engagement",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{BASE_URL}}/api/posts/1/engagement",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts",
-								"1",
-								"engagement"
-							]
-						},
-						"description": "Get post engagement statistics"
-					},
-					"response": []
-				}
-			],
-			"description": "Post creation and management endpoints"
-		},
-		{
-			"name": "❤️ Likes",
-			"item": [
-				{
-					"name": "Toggle Like on Post",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
-							}
-						],
-						"url": {
-							"raw": "{{BASE_URL}}/api/posts/1/like",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts",
-								"1",
-								"like"
-							]
-						},
-						"description": "Like or unlike a post"
-					},
-					"response": []
-				},
-				{
-					"name": "Check Like Status",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
-							}
-						],
-						"url": {
-							"raw": "{{BASE_URL}}/api/posts/1/like-status",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts",
-								"1",
-								"like-status"
-							]
-						},
-						"description": "Check if the current user has liked a specific post"
-					},
-					"response": []
-				},
-				{
-					"name": "Get User's Liked Posts",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
-							}
-						],
-						"url": {
-							"raw": "{{BASE_URL}}/api/posts/liked/1?page=1&limit=10",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts",
-								"liked",
-								"1"
-							],
-							"query": [
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "limit",
-									"value": "10"
-								}
-							]
-						},
-						"description": "Get all posts that a user has liked"
-					},
-					"response": []
-				}
-			],
-			"description": "Post likes functionality"
-		},
-		{
-			"name": "🔖 Saved Posts",
-			"item": [
-				{
-					"name": "Save Post",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
+								"value": "Bearer {{auth_token}}"
 							},
 							{
 								"key": "Content-Type",
@@ -682,65 +518,80 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"client_id\": 1,\n    \"post_id\": 1\n}"
+							"raw": "{\n  \"title\": \"Updated Product Title\",\n  \"description\": \"Updated product description\",\n  \"price\": 89.99,\n  \"expiration_date\": \"2024-12-31T23:59:59Z\"\n}"
 						},
 						"url": {
-							"raw": "{{BASE_URL}}/api/posts/save",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts",
-								"save"
-							]
+							"raw": "{{base_url}}/api/posts/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts", "1"]
 						},
-						"description": "Save a post to user's bookmarks"
+						"description": "Update an existing post. Only the post owner can update it."
 					},
 					"response": []
 				},
 				{
-					"name": "Get Saved Posts",
+					"name": "Delete Post",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/posts/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts", "1"]
+						},
+						"description": "Delete a post. Only the post owner can delete it."
+					},
+					"response": []
+				}
+			],
+			"description": "Post management endpoints for creating, reading, updating, and deleting posts and reels."
+		},
+		{
+			"name": "📅 Reservations",
+			"item": [
+				{
+					"name": "Get All Reservations",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
+								"value": "Bearer {{auth_token}}"
 							}
 						],
 						"url": {
-							"raw": "{{BASE_URL}}/api/posts/saved/1?page=1&limit=10",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"posts",
-								"saved",
-								"1"
-							],
-							"query": [
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "limit",
-									"value": "10"
-								}
-							]
+							"raw": "{{base_url}}/api/reservations",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reservations"]
 						},
-						"description": "Get all saved posts for a user"
+						"description": "Retrieve all reservations. Users can see their own reservations, advertisers can see reservations for their posts."
 					},
 					"response": []
-				}
-			],
-			"description": "Post bookmarking functionality"
-		},
-		{
-			"name": "📅 Reservations",
-			"item": [
+				},
+				{
+					"name": "Get Reservation by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/reservations/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reservations", "1"]
+						},
+						"description": "Retrieve a specific reservation by its ID."
+					},
+					"response": []
+				},
 				{
 					"name": "Create Reservation",
 					"request": {
@@ -748,7 +599,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
+								"value": "Bearer {{auth_token}}"
 							},
 							{
 								"key": "Content-Type",
@@ -757,88 +608,25 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"client_id\": 1,\n    \"post_id\": 1\n}"
+							"raw": "{\n  \"client_id\": 1,\n  \"client_type\": \"user\",\n  \"post_id\": 1\n}"
 						},
 						"url": {
-							"raw": "{{BASE_URL}}/api/reservations",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"reservations"
-							]
+							"raw": "{{base_url}}/api/reservations",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reservations"]
 						},
-						"description": "Create a new reservation for a post"
+						"description": "Create a new reservation for a post. Both users and advertisers can make reservations."
 					},
 					"response": []
 				},
 				{
-					"name": "Get User Reservations",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
-							}
-						],
-						"url": {
-							"raw": "{{BASE_URL}}/api/reservations/user/1",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"reservations",
-								"user",
-								"1"
-							]
-						},
-						"description": "Get all reservations for a specific user"
-					},
-					"response": []
-				},
-				{
-					"name": "Cancel Reservation",
+					"name": "Update Reservation",
 					"request": {
 						"method": "PUT",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
-							}
-						],
-						"url": {
-							"raw": "{{BASE_URL}}/api/reservations/1/cancel",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"reservations",
-								"1",
-								"cancel"
-							]
-						},
-						"description": "Cancel a reservation"
-					},
-					"response": []
-				}
-			],
-			"description": "Reservation management endpoints"
-		},
-		{
-			"name": "💬 Comments",
-			"item": [
-				{
-					"name": "Add Comment",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{AUTH_TOKEN}}"
+								"value": "Bearer {{auth_token}}"
 							},
 							{
 								"key": "Content-Type",
@@ -847,73 +635,140 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"post_id\": 1,\n    \"user_id\": 1,\n    \"content\": \"Great product!\"\n}"
+							"raw": "{\n  \"status\": \"cancelled\"\n}"
 						},
 						"url": {
-							"raw": "{{BASE_URL}}/api/comments",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"comments"
-							]
+							"raw": "{{base_url}}/api/reservations/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reservations", "1"]
 						},
-						"description": "Add a comment to a post"
+						"description": "Update a reservation status. Users can cancel their reservations, advertisers can update status."
 					},
 					"response": []
 				},
 				{
-					"name": "Get Post Comments",
+					"name": "Delete Reservation",
 					"request": {
-						"method": "GET",
-						"header": [],
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
 						"url": {
-							"raw": "{{BASE_URL}}/api/comments/post/1",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"comments",
-								"post",
-								"1"
-							]
+							"raw": "{{base_url}}/api/reservations/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reservations", "1"]
 						},
-						"description": "Get all comments for a specific post"
+						"description": "Delete a reservation. Only the reservation owner can delete it."
 					},
 					"response": []
 				}
 			],
-			"description": "Comment management endpoints"
+			"description": "Reservation management endpoints for booking and managing post reservations."
 		},
 		{
-			"name": "📂 Categories",
+			"name": "💬 Comments",
 			"item": [
 				{
-					"name": "Get All Categories",
+					"name": "Get Comments for Post",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{BASE_URL}}/api/categories",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"categories"
+							"raw": "{{base_url}}/api/comments?post_id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "comments"],
+							"query": [
+								{
+									"key": "post_id",
+									"value": "1"
+								}
 							]
 						},
-						"description": "Get all available categories"
+						"description": "Retrieve all comments for a specific post."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"post_id\": 1,\n  \"user_id\": 1,\n  \"user_type\": \"user\",\n  \"content\": \"Great post! This looks amazing.\",\n  \"parent_comment_id\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/comments",
+							"host": ["{{base_url}}"],
+							"path": ["api", "comments"]
+						},
+						"description": "Create a new comment on a post. Both users and advertisers can comment."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Comment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Updated comment content\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/comments/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "comments", "1"]
+						},
+						"description": "Update a comment. Only the comment author can update it."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Comment",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/comments/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "comments", "1"]
+						},
+						"description": "Delete a comment. Only the comment author can delete it."
 					},
 					"response": []
 				}
 			],
-			"description": "Category management endpoints"
+			"description": "Comment management endpoints for posting and managing comments on posts."
 		},
 		{
-			"name": "🏥 Health Check",
+			"name": "🔧 Utility",
 			"item": [
 				{
 					"name": "Health Check",
@@ -921,20 +776,44 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{BASE_URL}}/health",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"health"
-							]
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
 						},
-						"description": "Check if the server is running"
+						"description": "Check if the server is running and healthy."
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup Expired OTPs",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/cleanup-otps",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "cleanup-otps"]
+						},
+						"description": "Clean up expired and used OTP codes from the database."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Latest OTP (Development)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/otp/+1234567890/verification/user",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "otp", "+1234567890", "verification", "user"]
+						},
+						"description": "Get the latest OTP for testing purposes. Only available in development mode."
 					},
 					"response": []
 				}
 			],
-			"description": "Server health and status endpoints"
+			"description": "Utility endpoints for system health checks and development tools."
 		}
 	],
 	"event": [
@@ -943,7 +822,13 @@
 			"script": {
 				"type": "text/javascript",
 				"exec": [
-					""
+					"// Pre-request script to set up common variables",
+					"if (pm.environment.get('base_url') === '') {",
+					"    pm.environment.set('base_url', 'http://localhost:5000');",
+					"}",
+					"",
+					"// Log the request being made",
+					"console.log('Making request to: ' + pm.request.url.toString());"
 				]
 			}
 		},
@@ -952,21 +837,33 @@
 			"script": {
 				"type": "text/javascript",
 				"exec": [
-					"// Auto-extract token from login response",
-					"if (pm.response.code === 200 || pm.response.code === 201) {",
-					"    const response = pm.response.json();",
-					"    if (response.token) {",
-					"        pm.environment.set('AUTH_TOKEN', response.token);",
-					"        console.log('Token saved:', response.token.substring(0, 20) + '...');",
-					"    }",
-					"    if (response.user && response.user.id) {",
-					"        pm.environment.set('USER_ID', response.user.id);",
-					"        console.log('User ID saved:', response.user.id);",
-					"    }",
-					"    if (response.post && response.post.id) {",
-					"        pm.environment.set('POST_ID', response.post.id);",
-					"        console.log('Post ID saved:', response.post.id);",
-					"    }",
+					"// Test script to handle common response scenarios",
+					"pm.test('Status code is valid', function () {",
+					"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 401, 403, 404, 500]);",
+					"});",
+					"",
+					"pm.test('Response has required structure', function () {",
+					"    if (pm.response.code === 200 || pm.response.code === 201) {",
+					"        pm.expect(pm.response.json()).to.have.property('message');",
+					"}",
+					"});",
+					"",
+					"// Auto-save auth token for login responses",
+					"if (pm.response.code === 200 && pm.request.url.path.includes('/login')) {",
+					"    const responseJson = pm.response.json();",
+					"    if (responseJson.token) {",
+					"        pm.environment.set('auth_token', responseJson.token);",
+					"        console.log('Auth token saved automatically');",
+					"}",
+					"}",
+					"",
+					"// Auto-save OTP for testing",
+					"if (pm.response.code === 200 && pm.request.url.path.includes('/send-otp')) {",
+					"    const responseJson = pm.response.json();",
+					"    if (responseJson.otp) {",
+					"        pm.environment.set('last_otp', responseJson.otp);",
+					"        console.log('OTP saved: ' + responseJson.otp);",
+					"}",
 					"}"
 				]
 			}
@@ -974,22 +871,32 @@
 	],
 	"variable": [
 		{
-			"key": "BASE_URL",
-			"value": "https://server-final-2olj.onrender.com",
+			"key": "base_url",
+			"value": "http://localhost:5000",
 			"type": "string"
 		},
 		{
-			"key": "AUTH_TOKEN",
+			"key": "auth_token",
 			"value": "",
 			"type": "string"
 		},
 		{
-			"key": "USER_ID",
+			"key": "last_otp",
 			"value": "",
 			"type": "string"
 		},
 		{
-			"key": "POST_ID",
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "advertiser_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "post_id",
 			"value": "",
 			"type": "string"
 		}

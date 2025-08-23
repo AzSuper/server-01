@@ -4,26 +4,28 @@
 -- Enable UUID extension (optional, for better ID handling)
 -- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Users table - Updated for phone-based authentication
+-- Users table - Updated for new authentication flow
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE,
     phone VARCHAR(20) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'user' CHECK (role IN ('user', 'advertiser', 'admin')),
+    profile_image TEXT, -- URL to profile image
     is_verified BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Advertiser profiles table
-CREATE TABLE IF NOT EXISTS advertiser_profiles (
+-- Advertisers table - Separate from users for new flow
+CREATE TABLE IF NOT EXISTS advertisers (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    full_name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
     store_name VARCHAR(255) NOT NULL,
+    store_image TEXT, -- URL to store image
     description TEXT,
-    social_media_links JSONB, -- Store social media links as JSON
+    is_verified BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -34,6 +36,7 @@ CREATE TABLE IF NOT EXISTS otp_codes (
     phone VARCHAR(20) NOT NULL,
     otp_code VARCHAR(6) NOT NULL,
     type VARCHAR(20) NOT NULL CHECK (type IN ('verification', 'password_reset')),
+    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('user', 'advertiser')),
     expires_at TIMESTAMP NOT NULL,
     is_used BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -47,10 +50,10 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Posts table - Updated for new post types and features
+-- Posts table - Updated to reference advertisers table
 CREATE TABLE IF NOT EXISTS posts (
     id SERIAL PRIMARY KEY,
-    advertiser_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    advertiser_id INTEGER NOT NULL REFERENCES advertisers(id) ON DELETE CASCADE,
     category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
     type VARCHAR(10) NOT NULL CHECK (type IN ('reel', 'post')),
     title VARCHAR(255) NOT NULL CHECK (char_length(trim(title)) > 0),
@@ -71,15 +74,16 @@ CREATE TABLE IF NOT EXISTS posts (
     )
 );
 
--- Reservations table
+-- Reservations table - Updated to reference both users and advertisers
 CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    client_id INTEGER NOT NULL, -- Can be either user or advertiser
+    client_type VARCHAR(20) NOT NULL CHECK (client_type IN ('user', 'advertiser')),
     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
     status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','cancelled')),
     reserved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     cancelled_at TIMESTAMP,
-    UNIQUE(client_id, post_id)
+    UNIQUE(client_id, post_id, client_type)
 );
 
 -- Migration helper: ensure new columns exist on existing installations
@@ -102,38 +106,36 @@ END $$;
 -- Saved posts table (for user bookmarks)
 CREATE TABLE IF NOT EXISTS saved_posts (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    client_id INTEGER NOT NULL, -- Can be either user or advertiser
+    client_type VARCHAR(20) NOT NULL CHECK (client_type IN ('user', 'advertiser')),
     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
     saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(client_id, post_id)
+    UNIQUE(client_id, post_id, client_type)
 );
 
--- Post likes table
+-- Post likes table - Updated to reference both user types
 CREATE TABLE IF NOT EXISTS post_likes (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL, -- Can be either user or advertiser
+    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('user', 'advertiser')),
     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, post_id)
+    UNIQUE(user_id, post_id, user_type)
 );
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
--- Case-insensitive lookup for emails
--- Enforce case-insensitive uniqueness for emails
-CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_lower ON users (LOWER(email));
-CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_is_verified ON users(is_verified);
+CREATE INDEX IF NOT EXISTS idx_advertisers_phone ON advertisers(phone);
+CREATE INDEX IF NOT EXISTS idx_advertisers_is_verified ON advertisers(is_verified);
 
 -- OTP indexes
 CREATE INDEX IF NOT EXISTS idx_otp_codes_phone ON otp_codes(phone);
 CREATE INDEX IF NOT EXISTS idx_otp_codes_type ON otp_codes(type);
+CREATE INDEX IF NOT EXISTS idx_otp_codes_user_type ON otp_codes(user_type);
 CREATE INDEX IF NOT EXISTS idx_otp_codes_expires_at ON otp_codes(expires_at);
 
--- Advertiser profiles indexes
-CREATE INDEX IF NOT EXISTS idx_advertiser_profiles_user_id ON advertiser_profiles(user_id);
-CREATE INDEX IF NOT EXISTS idx_advertiser_profiles_store_name ON advertiser_profiles(store_name);
+-- Posts indexes
 CREATE INDEX IF NOT EXISTS idx_posts_advertiser_id ON posts(advertiser_id);
 CREATE INDEX IF NOT EXISTS idx_posts_category_id ON posts(category_id);
 CREATE INDEX IF NOT EXISTS idx_posts_type ON posts(type);
@@ -144,23 +146,30 @@ CREATE INDEX IF NOT EXISTS idx_posts_likes_count ON posts(likes_count);
 -- Optimize queries by reservation deadline only for posts that accept reservations
 CREATE INDEX IF NOT EXISTS idx_posts_reservation_deadline ON posts(reservation_time) WHERE with_reservation = true;
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at);
+
+-- Reservations indexes
 CREATE INDEX IF NOT EXISTS idx_reservations_client_id ON reservations(client_id);
+CREATE INDEX IF NOT EXISTS idx_reservations_client_type ON reservations(client_type);
 CREATE INDEX IF NOT EXISTS idx_reservations_post_id ON reservations(post_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_reserved_at ON reservations(reserved_at);
 CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
+
+-- Saved posts indexes
 CREATE INDEX IF NOT EXISTS idx_saved_posts_client_id ON saved_posts(client_id);
+CREATE INDEX IF NOT EXISTS idx_saved_posts_client_type ON saved_posts(client_type);
 CREATE INDEX IF NOT EXISTS idx_saved_posts_post_id ON saved_posts(post_id);
 
 -- Post likes indexes
 CREATE INDEX IF NOT EXISTS idx_post_likes_user_id ON post_likes(user_id);
+CREATE INDEX IF NOT EXISTS idx_post_likes_user_type ON post_likes(user_type);
 CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_id);
 CREATE INDEX IF NOT EXISTS idx_post_likes_created_at ON post_likes(created_at);
 
 -- Create composite indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_posts_advertiser_type ON posts(advertiser_id, type);
 CREATE INDEX IF NOT EXISTS idx_posts_category_type ON posts(category_id, type);
-CREATE INDEX IF NOT EXISTS idx_reservations_post_client ON reservations(post_id, client_id);
-CREATE INDEX IF NOT EXISTS idx_post_likes_user_post ON post_likes(user_id, post_id);
+CREATE INDEX IF NOT EXISTS idx_reservations_post_client ON reservations(post_id, client_id, client_type);
+CREATE INDEX IF NOT EXISTS idx_post_likes_user_post ON post_likes(user_id, post_id, user_type);
 
 -- Insert some default categories
 INSERT INTO categories (name, description) VALUES
@@ -192,24 +201,21 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_advertisers_updated_at BEFORE UPDATE ON advertisers
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_posts_updated_at BEFORE UPDATE ON posts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_advertiser_profiles_updated_at BEFORE UPDATE ON advertiser_profiles
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Enforce that only advertisers/admins can create posts
+-- Enforce that only advertisers can create posts
 CREATE OR REPLACE FUNCTION ensure_advertiser_role_on_post()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_role VARCHAR(50);
+    v_exists BOOLEAN;
 BEGIN
-    SELECT role INTO v_role FROM users WHERE id = NEW.advertiser_id;
-    IF v_role IS NULL THEN
-        RAISE EXCEPTION 'Advertiser (user_id=%) not found', NEW.advertiser_id;
-    END IF;
-    IF v_role NOT IN ('advertiser','admin') THEN
-        RAISE EXCEPTION 'Only advertisers or admins can create posts (user_id=% has role=%)', NEW.advertiser_id, v_role;
+    SELECT EXISTS(SELECT 1 FROM advertisers WHERE id = NEW.advertiser_id) INTO v_exists;
+    IF NOT v_exists THEN
+        RAISE EXCEPTION 'Advertiser (id=%) not found', NEW.advertiser_id;
     END IF;
     RETURN NEW;
 END;
@@ -260,10 +266,21 @@ FOR EACH ROW EXECUTE FUNCTION enforce_reservation_rules();
 CREATE TABLE IF NOT EXISTS user_profiles (
     user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     display_name VARCHAR(255),
-    avatar_url TEXT,
     bio TEXT,
     website TEXT,
-    company_name VARCHAR(255),
+    location VARCHAR(255),
+    social_links JSONB, -- arbitrary social links, e.g., {"instagram":"..."}
+    metadata JSONB,     -- extensible profile data
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Advertiser profiles for additional advertiser information
+CREATE TABLE IF NOT EXISTS advertiser_profiles (
+    advertiser_id INTEGER PRIMARY KEY REFERENCES advertisers(id) ON DELETE CASCADE,
+    display_name VARCHAR(255),
+    bio TEXT,
+    website TEXT,
     location VARCHAR(255),
     social_links JSONB, -- arbitrary social links, e.g., {"instagram":"..."}
     metadata JSONB,     -- extensible profile data
@@ -273,7 +290,8 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 
 -- Per-user settings (applies to both clients and advertisers)
 CREATE TABLE IF NOT EXISTS user_settings (
-    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL,
+    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('user', 'advertiser')),
     notifications_email BOOLEAN DEFAULT true,
     notifications_push BOOLEAN DEFAULT true,
     language VARCHAR(10) DEFAULT 'en',
@@ -281,21 +299,16 @@ CREATE TABLE IF NOT EXISTS user_settings (
     profile_visibility VARCHAR(20) DEFAULT 'public' CHECK (profile_visibility IN ('public','private','followers')),
     marketing_opt_in BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, user_type)
 );
 
--- Helpful functional indexes
-CREATE INDEX IF NOT EXISTS idx_user_profiles_display_name_lower ON user_profiles (LOWER(display_name));
-CREATE INDEX IF NOT EXISTS idx_user_profiles_company_name_lower ON user_profiles (LOWER(company_name));
--- JSONB indexes for flexible querying
-CREATE INDEX IF NOT EXISTS idx_user_profiles_social_links_gin ON user_profiles USING GIN (social_links);
-CREATE INDEX IF NOT EXISTS idx_user_profiles_metadata_gin ON user_profiles USING GIN (metadata);
-
--- Comments for posts (by any user)
+-- Comments for posts (by any user or advertiser)
 CREATE TABLE IF NOT EXISTS comments (
     id SERIAL PRIMARY KEY,
     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL, -- Can be either user or advertiser
+    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('user', 'advertiser')),
     parent_comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
     content TEXT NOT NULL CHECK (char_length(trim(content)) > 0),
     status VARCHAR(20) NOT NULL DEFAULT 'visible' CHECK (status IN ('visible','hidden','deleted','pending')),
@@ -338,6 +351,7 @@ FOR EACH ROW EXECUTE FUNCTION enforce_comment_depth_limit();
 -- Indexes for new tables
 CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id);
 CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments(user_id);
+CREATE INDEX IF NOT EXISTS idx_comments_user_type ON comments(user_type);
 CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON comments(parent_comment_id);
 CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at);
 CREATE INDEX IF NOT EXISTS idx_comments_visible_post_id ON comments(post_id) WHERE status = 'visible';
@@ -346,7 +360,7 @@ CREATE INDEX IF NOT EXISTS idx_comments_visible_post_id ON comments(post_id) WHE
 CREATE TRIGGER update_user_profiles_updated_at BEFORE UPDATE ON user_profiles
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings
+CREATE TRIGGER update_advertiser_profiles_updated_at BEFORE UPDATE ON advertiser_profiles
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_comments_updated_at BEFORE UPDATE ON comments
@@ -355,6 +369,7 @@ CREATE TRIGGER update_comments_updated_at BEFORE UPDATE ON comments
 -- Create function to handle post likes
 CREATE OR REPLACE FUNCTION toggle_post_like(
     p_user_id INTEGER,
+    p_user_type VARCHAR(20),
     p_post_id INTEGER
 )
 RETURNS TABLE(
@@ -367,14 +382,14 @@ DECLARE
     v_current_likes INTEGER;
 BEGIN
     -- Check if like already exists
-    SELECT EXISTS(SELECT 1 FROM post_likes WHERE user_id = p_user_id AND post_id = p_post_id) INTO v_exists;
+    SELECT EXISTS(SELECT 1 FROM post_likes WHERE user_id = p_user_id AND user_type = p_user_type AND post_id = p_post_id) INTO v_exists;
     
     -- Get current likes count
     SELECT likes_count INTO v_current_likes FROM posts WHERE id = p_post_id;
     
     IF v_exists THEN
         -- Unlike: remove the like
-        DELETE FROM post_likes WHERE user_id = p_user_id AND post_id = p_post_id;
+        DELETE FROM post_likes WHERE user_id = p_user_id AND user_type = p_user_type AND post_id = p_post_id;
         UPDATE posts SET likes_count = likes_count - 1 WHERE id = p_post_id;
         
         RETURN QUERY SELECT 
@@ -383,7 +398,7 @@ BEGIN
             false::BOOLEAN;
     ELSE
         -- Like: add the like
-        INSERT INTO post_likes (user_id, post_id) VALUES (p_user_id, p_post_id);
+        INSERT INTO post_likes (user_id, user_type, post_id) VALUES (p_user_id, p_user_type, p_post_id);
         UPDATE posts SET likes_count = likes_count + 1 WHERE id = p_post_id;
         
         RETURN QUERY SELECT 
@@ -397,7 +412,8 @@ $$ LANGUAGE plpgsql;
 -- Create function to check reservation availability
 CREATE OR REPLACE FUNCTION check_reservation_availability(
     p_post_id INTEGER,
-    p_client_id INTEGER
+    p_client_id INTEGER,
+    p_client_type VARCHAR(20)
 )
 RETURNS TABLE(
     is_available BOOLEAN,
@@ -430,7 +446,7 @@ BEGIN
     END IF;
     
     -- Check if client already has a reservation
-    IF EXISTS(SELECT 1 FROM reservations WHERE client_id = p_client_id AND post_id = p_post_id) THEN
+    IF EXISTS(SELECT 1 FROM reservations WHERE client_id = p_client_id AND client_type = p_client_type AND post_id = p_post_id) THEN
         RETURN QUERY SELECT false, 'Client already has a reservation for this post'::TEXT, 0::INTEGER;
         RETURN;
     END IF;
@@ -459,22 +475,45 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE VIEW v_user_profile_overview AS
 SELECT
     u.id AS user_id,
-    u.name,
-    u.email,
-    u.role,
-    COALESCE(up.display_name, u.name) AS display_name,
-    up.avatar_url,
-    up.company_name,
-    up.location,
+    'user' AS user_type,
+    u.full_name,
+    u.phone,
+    u.profile_image,
+    u.is_verified,
+    COALESCE(up.display_name, u.full_name) AS display_name,
+    up.bio,
     up.website,
+    up.location,
     up.social_links,
     up.metadata,
-    (SELECT COUNT(*) FROM posts p WHERE p.advertiser_id = u.id) AS total_posts,
-    (SELECT COUNT(*) FROM reservations r JOIN posts p2 ON r.post_id = p2.id WHERE p2.advertiser_id = u.id) AS total_reservations_on_my_posts,
-    (SELECT COUNT(*) FROM reservations r WHERE r.client_id = u.id) AS total_reservations_made,
-    (SELECT COUNT(*) FROM saved_posts sp WHERE sp.client_id = u.id) AS total_saved_posts
+    0 AS total_posts,
+    (SELECT COUNT(*) FROM reservations r JOIN posts p2 ON r.post_id = p2.id WHERE r.client_id = u.id AND r.client_type = 'user') AS total_reservations_on_my_posts,
+    (SELECT COUNT(*) FROM reservations r WHERE r.client_id = u.id AND r.client_type = 'user') AS total_reservations_made,
+    (SELECT COUNT(*) FROM saved_posts sp WHERE sp.client_id = u.id AND sp.client_type = 'user') AS total_saved_posts
 FROM users u
-LEFT JOIN user_profiles up ON up.user_id = u.id;
+LEFT JOIN user_profiles up ON up.user_id = u.id
+
+UNION ALL
+
+SELECT
+    a.id AS user_id,
+    'advertiser' AS user_type,
+    a.full_name,
+    a.phone,
+    a.store_image AS profile_image,
+    a.is_verified,
+    COALESCE(ap.display_name, a.full_name) AS display_name,
+    ap.bio,
+    ap.website,
+    ap.location,
+    ap.social_links,
+    ap.metadata,
+    (SELECT COUNT(*) FROM posts p WHERE p.advertiser_id = a.id) AS total_posts,
+    (SELECT COUNT(*) FROM reservations r JOIN posts p2 ON r.post_id = p2.id WHERE p2.advertiser_id = a.id) AS total_reservations_on_my_posts,
+    (SELECT COUNT(*) FROM reservations r WHERE r.client_id = a.id AND r.client_type = 'advertiser') AS total_reservations_made,
+    (SELECT COUNT(*) FROM saved_posts sp WHERE sp.client_id = a.id AND sp.client_type = 'advertiser') AS total_saved_posts
+FROM advertisers a
+LEFT JOIN advertiser_profiles ap ON ap.advertiser_id = a.id;
 
 CREATE OR REPLACE VIEW v_post_engagement AS
 SELECT

@@ -1,268 +1,225 @@
 # Flutter Backend API
 
-A comprehensive Node.js/Express backend API for a Flutter application with phone-based authentication, OTP verification, and advanced post management features.
+A comprehensive backend API for Flutter applications with separate authentication flows for users and advertisers.
 
-## 🌟 New Features
+## 🚀 Features
 
-### 1. Phone-Based Authentication with OTP
-- **Phone verification**: Users register with phone numbers and verify via OTP
-- **Two user types**: Normal users and advertisers with separate registration flows
-- **Password reset**: Secure password reset using OTP verification
-- **JWT tokens**: 7-day expiration for enhanced security
+- **Dual User System**: Separate authentication for regular users and advertisers
+- **OTP Verification**: Phone-based verification with OTP codes
+- **JWT Authentication**: Secure token-based authentication
+- **Post Management**: Create and manage posts (reels and regular posts)
+- **Reservation System**: Book and manage reservations
+- **File Upload**: Cloudinary integration for media uploads
+- **Rate Limiting**: API protection against abuse
+- **Comprehensive Logging**: Detailed logging for debugging
 
-### 2. Enhanced Post Management
-- **Two post types**:
-  - **Reel**: Video media + description
-  - **Post**: Image media + title + expiration date + product pricing + social media links
-- **Expiration dates**: Posts can have automatic expiration
-- **Social media integration**: Support for multiple social media links
-- **Enhanced reservation system**: Time-based reservations with limits
-- **Likes system**: Users can like/unlike posts with real-time counter updates
+## 🏗️ Architecture
 
-### 3. Advanced User Management
-- **Advertiser profiles**: Store information, descriptions, and social media links
-- **User verification**: Phone number verification required for all users
-- **Profile management**: Update advertiser profiles and settings
+### User Types
 
-## 🚀 Quick Start
+1. **Users (Regular Customers)**
+   - Browse posts
+   - Make reservations
+   - Save posts
+   - Like and comment on posts
 
-### Prerequisites
+2. **Advertisers (Business Owners)**
+   - Create posts and reels
+   - Manage business profile
+   - View analytics and reservations
+
+### Database Schema
+
+- `users` - Regular customer accounts
+- `advertisers` - Business owner accounts
+- `posts` - Content created by advertisers
+- `reservations` - Booking system
+- `otp_codes` - Phone verification system
+- `user_profiles` / `advertiser_profiles` - Extended profile information
+
+## 🔐 Authentication Flow
+
+### New User Registration
+
+1. **Send OTP**: `POST /api/users/send-otp`
+2. **Verify OTP**: `POST /api/users/verify-otp`
+3. **Register**: `POST /api/users/register/user` or `POST /api/users/register/advertiser`
+
+### Login
+
+- **Sign In**: `POST /api/users/login` (phone + password)
+
+### Password Reset
+
+1. **Request Reset**: `POST /api/users/forgot-password`
+2. **Reset Password**: `POST /api/users/reset-password`
+
+## 📋 Prerequisites
+
 - Node.js (v14 or higher)
-- PostgreSQL database
-- Cloudinary account (for media uploads)
+- PostgreSQL (v12 or higher)
+- Cloudinary account (for file uploads)
 
-### Installation
+## 🛠️ Installation
 
 1. **Clone the repository**
-```bash
-git clone <repository-url>
-cd cursor
-```
+   ```bash
+   git clone <repository-url>
+   cd serve-01
+   ```
 
 2. **Install dependencies**
-```bash
-npm install
-```
+   ```bash
+   npm install
+   ```
 
-3. **Set up environment variables**
-Create a `.env` file with the following variables:
-```env
-# Database
-DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+3. **Environment Configuration**
+   Create a `.env` file in the root directory:
+   ```env
+   NODE_ENV=development
+   PORT=5000
+   
+   # Database
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=your_database_name
+   DB_USER=your_database_user
+   DB_PASSWORD=your_database_password
+   
+   # JWT
+   JWT_SECRET=your_jwt_secret_key
+   
+   # Cloudinary
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_API_KEY=your_api_key
+   CLOUDINARY_API_SECRET=your_api_secret
+   
+   # CORS
+   ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+   ```
 
-# JWT
-JWT_SECRET=your_jwt_secret_key
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# Environment
-NODE_ENV=development
-PORT=5000
-
-# CORS
-ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
-```
-
-4. **Set up the database**
-```bash
-# Run the schema setup
-psql $DATABASE_URL -f database/schema.sql
-
-# For existing installations, run the migration
-psql $DATABASE_URL -f database/migration.sql
-```
+4. **Database Setup**
+   ```bash
+   # Create database
+   createdb your_database_name
+   
+   # Run schema
+   psql -d your_database_name -f database/schema.sql
+   ```
 
 5. **Start the server**
-```bash
-npm start
-```
-
-## 📱 API Endpoints
-
-### Base URL
-```
-https://server-final-2olj.onrender.com
-```
-
-### Authentication Flow
-
-#### 1. Send OTP
-```http
-POST /api/users/send-otp
-Content-Type: application/json
-
-{
-    "phone": "+1234567890",
-    "type": "verification"
-}
-```
-
-#### 2. Register Normal User
-```http
-POST /api/users/register/normal-user
-Content-Type: application/json
-
-{
-    "fullName": "John Doe",
-    "phone": "+1234567890",
-    "password": "password123",
-    "otp": "123456"
-}
-```
-
-#### 3. Register Advertiser
-```http
-POST /api/users/register/advertiser
-Content-Type: application/json
-
-{
-    "fullName": "Jane Smith",
-    "phone": "+1234567890",
-    "password": "password123",
-    "storeName": "Jane's Store",
-    "description": "Best store in town",
-    "otp": "123456"
-}
-```
-
-#### 4. Login
-```http
-POST /api/users/login
-Content-Type: application/json
-
-{
-    "phone": "+1234567890",
-    "password": "password123"
-}
-```
-
-### Post Management
-
-#### Create Reel Post
-```http
-POST /api/posts
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
-
-Form Data:
-- advertiser_id: 1
-- category_id: 1
-- type: "reel"
-- description: "Amazing product video"
-- media: [video file]
-```
-
-#### Create Post
-```http
-POST /api/posts
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
-
-Form Data:
-- advertiser_id: 1
-- category_id: 1
-- type: "post"
-- title: "Amazing Product"
-- description: "Product description"
-- price: 99.99
-- old_price: 129.99
-- expiration_date: "2024-12-31T23:59:59Z"
-- media: [image file]
-- social_media_links: {"instagram": "https://instagram.com/post"}
-```
+   ```bash
+   # Development mode
+   npm run dev
+   
+   # Production mode
+   npm start
+   ```
 
 ## 🧪 Testing
 
-### Run API Tests
+### Run Authentication Tests
 ```bash
-./test_api.sh
+npm run test:auth
 ```
 
 ### Manual Testing with Postman
-1. Import the Postman collection from `POSTMAN_SETUP_GUIDE.md`
-2. Set up environment variables
-3. Follow the authentication flow
-4. Test all endpoints
+Import the `postman_collection.json` file into Postman for API testing.
 
-## 📊 Database Schema
+## 📚 API Endpoints
 
-### Key Tables
-- **users**: User accounts with phone-based authentication
-- **advertiser_profiles**: Advertiser-specific information
-- **otp_codes**: OTP management for verification and password reset
-- **posts**: Enhanced posts with type-specific fields
-- **reservations**: Time-based reservation system
-- **comments**: Post comments with moderation
-- **categories**: Product categories
+### Authentication
+- `POST /api/users/send-otp` - Send OTP for verification
+- `POST /api/users/verify-otp` - Verify OTP
+- `POST /api/users/register/user` - Register regular user
+- `POST /api/users/register/advertiser` - Register advertiser
+- `POST /api/users/login` - User login
+- `POST /api/users/forgot-password` - Request password reset
+- `POST /api/users/reset-password` - Reset password
 
-### New Features
-- Phone number uniqueness and verification
-- OTP expiration and cleanup
-- Post expiration dates
-- Social media links (JSONB)
-- Enhanced reservation system
-- Post likes system with real-time counters
+### User Management
+- `GET /api/users/profile` - Get user profile
+- `PUT /api/users/profile` - Update user profile
+- `GET /api/users/:id` - Get user by ID (admin)
 
-## 🔧 Configuration
+### Posts
+- `GET /api/posts` - Get all posts
+- `POST /api/posts` - Create new post (advertisers only)
+- `GET /api/posts/:id` - Get post by ID
+- `PUT /api/posts/:id` - Update post
+- `DELETE /api/posts/:id` - Delete post
 
-### Environment Variables
-- `DATABASE_URL`: PostgreSQL connection string
-- `JWT_SECRET`: Secret key for JWT tokens
-- `CLOUDINARY_*`: Cloudinary configuration for media uploads
-- `NODE_ENV`: Environment (development/production)
-- `PORT`: Server port (default: 5000)
+### Reservations
+- `GET /api/reservations` - Get reservations
+- `POST /api/reservations` - Create reservation
+- `PUT /api/reservations/:id` - Update reservation
+- `DELETE /api/reservations/:id` - Cancel reservation
 
-### Development vs Production
-- **Development**: OTP codes returned in responses for testing
-- **Production**: OTP codes sent via SMS (not returned in responses)
-
-## 🚀 Deployment
-
-### Using the Deployment Script
-```bash
-./deploy.sh
-```
-
-### Manual Deployment
-1. Set up environment variables
-2. Run database migration: `psql $DATABASE_URL -f database/migration.sql`
-3. Install dependencies: `npm install`
-4. Start the server: `npm start`
-
-### Complete Database Recreation
-If you want to start fresh with the new schema:
-```bash
-./recreate_database.sh
-```
-
-## 📚 Documentation
-
-- **API Documentation**: `API_ENDPOINTS.md`
-- **Postman Setup**: `POSTMAN_SETUP_GUIDE.md`
-- **Database Schema**: `database/schema.sql`
-- **Migration Guide**: `database/migration.sql`
+### Comments
+- `GET /api/comments` - Get comments for a post
+- `POST /api/comments` - Add comment
+- `PUT /api/comments/:id` - Update comment
+- `DELETE /api/comments/:id` - Delete comment
 
 ## 🔒 Security Features
 
-- Phone-based authentication with OTP verification
-- JWT tokens with 7-day expiration
-- Password hashing with bcrypt
-- Rate limiting (100 requests per 15 minutes)
-- CORS protection
-- Input validation and sanitization
-- SQL injection protection
+- **Password Hashing**: bcrypt with salt rounds
+- **JWT Tokens**: Configurable expiration times
+- **Rate Limiting**: API protection against abuse
+- **Input Validation**: Comprehensive request validation
+- **CORS Protection**: Configurable cross-origin policies
+- **Helmet Security**: HTTP security headers
 
-## 📈 Performance Features
+## 📝 Environment Variables
 
-- Database connection pooling
-- Gzip compression
-- Static file caching
-- Health checks
-- Graceful shutdown
-- Comprehensive logging
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `NODE_ENV` | Environment mode | Yes | `development` |
+| `PORT` | Server port | No | `5000` |
+| `DB_HOST` | Database host | Yes | - |
+| `DB_PORT` | Database port | No | `5432` |
+| `DB_NAME` | Database name | Yes | - |
+| `DB_USER` | Database user | Yes | - |
+| `DB_PASSWORD` | Database password | Yes | - |
+| `JWT_SECRET` | JWT signing secret | Yes | - |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | Yes | - |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | Yes | - |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | Yes | - |
+| `ALLOWED_ORIGINS` | CORS allowed origins | No | `*` |
+
+## 🚨 Error Handling
+
+The API includes comprehensive error handling:
+- **Validation Errors**: Detailed field validation messages
+- **Authentication Errors**: Clear authentication failure messages
+- **Database Errors**: Database constraint and connection error handling
+- **File Upload Errors**: Media upload validation and error handling
+
+## 📊 Logging
+
+- **Application Logs**: `logs/all.log`
+- **Error Logs**: `logs/error.log`
+- **Log Levels**: info, warn, error
+- **Request Logging**: Morgan HTTP request logging
+
+## 🔄 Migration from Old System
+
+If migrating from the previous authentication system:
+
+1. **Update Database Schema**
+   ```bash
+   psql -d your_database_name -f database/schema.sql
+   ```
+
+2. **Update Client Applications**
+   - Use new API endpoints
+   - Include `userType` in OTP requests
+   - Handle new JWT token structure
+
+3. **Test Authentication Flow**
+   - Verify OTP flow for both user types
+   - Test registration and login
+   - Validate JWT tokens
 
 ## 🤝 Contributing
 
@@ -279,25 +236,31 @@ This project is licensed under the ISC License.
 ## 🆘 Support
 
 For support and questions:
-1. Check the documentation files
-2. Review the API endpoints documentation
-3. Run the test script to verify functionality
-4. Check the logs for detailed error information
+1. Check the `AUTHENTICATION_FLOW.md` for detailed API documentation
+2. Review the logs for error details
+3. Test with the provided test script
+4. Check Postman collection for API examples
 
-## 🔄 Migration from Previous Version
+## 🔍 Debugging
 
-If you're upgrading from a previous version:
+### Common Issues
 
-1. **Backup your database**
-2. **Run the migration script**:
-   ```bash
-   psql $DATABASE_URL -f database/migration.sql
-   ```
-3. **Update your environment variables**
-4. **Test the new functionality**
+1. **Database Connection**
+   - Verify PostgreSQL is running
+   - Check database credentials in `.env`
+   - Ensure database exists
 
-The migration script will:
-- Add new columns to existing tables
-- Create new tables for OTP and advertiser profiles
-- Migrate existing data to new schema
-- Set up proper indexes and constraints
+2. **OTP Issues**
+   - Check phone number format (+1234567890)
+   - Verify OTP hasn't expired (10 minutes)
+   - Check logs for OTP creation/verification
+
+3. **File Upload Issues**
+   - Verify Cloudinary credentials
+   - Check file size limits
+   - Ensure supported file formats
+
+### Logs Location
+- **Application**: `logs/all.log`
+- **Errors**: `logs/error.log`
+- **Real-time**: `tail -f logs/all.log`
