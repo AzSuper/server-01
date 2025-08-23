@@ -1,0 +1,128 @@
+2025-08-17 16:46:38:4638 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-17 16:46:38:4638 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-17 16:46:38:4638 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-17 16:47:49:4749 [32minfo[39m: [32m🔄 Received SIGINT. Starting graceful shutdown...[39m
+2025-08-18 13:17:50:1750 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 13:17:50:1750 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 13:17:50:1750 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 14:20:37:2037 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 14:20:37:2037 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 14:20:37:2037 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 14:37:28:3728 [35mhttp[39m: [35m::1 - - [18/Aug/2025:11:37:28 +0000] "GET /health HTTP/1.1" 200 113 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 OPR/120.0.0.0"[39m
+2025-08-18 14:37:28:3728 [35mhttp[39m: [35m::1 - - [18/Aug/2025:11:37:28 +0000] "GET /favicon.ico HTTP/1.1" 404 69 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 OPR/120.0.0.0"[39m
+2025-08-18 18:30:52:3052 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 18:30:52:3052 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 18:30:52:3052 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 18:36:46:3646 [31merror[39m: [31m❌ Unhandled Rejection: Illegal arguments: undefined, number[39m
+2025-08-18 18:38:35:3835 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 18:38:35:3835 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 18:38:35:3835 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 18:39:18:3918 [31merror[39m: [31m❌ Unhandled Rejection: Illegal arguments: undefined, number[39m
+2025-08-18 18:41:56:4156 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 18:41:56:4156 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 18:41:56:4156 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 18:51:53:5153 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 18:51:53:5153 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 18:51:53:5153 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 18:55:48:5548 [31merror[39m: [31m❌ Unhandled Rejection: Illegal arguments: undefined, number[39m
+2025-08-18 18:57:28:5728 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 18:57:28:5728 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 18:57:28:5728 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 18:58:38:5838 [35mhttp[39m: [35m::1 - - [18/Aug/2025:15:58:38 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 18:59:05:595 [35mhttp[39m: [35m::1 - - [18/Aug/2025:15:59:05 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 18:59:56:5956 [35mhttp[39m: [35m::1 - - [18/Aug/2025:15:59:56 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:00:57:057 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:00:57 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:04:46:446 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:04:46 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:05:12:512 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:05:12 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:06:45:645 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:06:45 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:07:56:756 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:07:56 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:08:06:86 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:08:06 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:08:33:833 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:08:33 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:12:06:126 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 19:12:06:126 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 19:12:06:126 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 19:12:19:1219 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:12:19:1219 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:12:19 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:12:43:1243 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:12:43:1243 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:12:43 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "curl/8.15.0"[39m
+2025-08-18 19:13:32:1332 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:13:32 +0000] "POST /api/register HTTP/1.1" 404 70 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:13:43:1343 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:13:43 +0000] "POST /api/user/register HTTP/1.1" 404 75 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:13:52:1352 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:13:52:1352 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:13:52 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:16:18:1618 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:16:18:1618 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:16:18 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:19:22:1922 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:19:22:1922 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:19:22 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:20:07:207 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:20:07:207 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:20:07 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:20:28:2028 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:20:28:2028 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:20:28 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:20:29:2029 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:20:29:2029 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:20:29 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:20:29:2029 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:20:29:2029 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:20:29 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:22:38:2238 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:22:38:2238 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:22:38 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:24:11:2411 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:24:11:2411 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:24:11 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:24:44:2444 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:24:44:2444 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:24:44 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:25:16:2516 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:25:16:2516 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:25:16 +0000] "POST /api/users/register HTTP/1.1" 500 36 "-" "curl/8.15.0"[39m
+2025-08-18 19:32:36:3236 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 19:32:36:3236 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 19:32:36:3236 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 19:32:42:3242 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:32:42 +0000] "POST /api/users/register HTTP/1.1" 201 238 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:37:32:3732 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:37:32 +0000] "POST /api/users/login HTTP/1.1" 200 168 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:57:20:5720 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 19:57:20:5720 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 19:57:20:5720 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 19:57:25:5725 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:57:25 +0000] "POST /api/users/login HTTP/1.1" 200 168 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 19:59:37:5937 [35mhttp[39m: [35m::1 - - [18/Aug/2025:16:59:37 +0000] "GET /api/users/1/settings HTTP/1.1" 404 30 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-18 20:09:28:928 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-18 20:09:28:928 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-18 20:09:28:928 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-18 20:11:35:1135 [35mhttp[39m: [35m::1 - - [18/Aug/2025:17:11:35 +0000] "POST /api/users/register/advertiser HTTP/1.1" 201 263 "-" "curl/8.15.0"[39m
+2025-08-18 20:11:50:1150 [35mhttp[39m: [35m::1 - - [18/Aug/2025:17:11:50 +0000] "POST /api/users/login/advertiser HTTP/1.1" 200 176 "-" "curl/8.15.0"[39m
+2025-08-18 20:13:49:1349 [35mhttp[39m: [35m::1 - - [18/Aug/2025:17:13:49 +0000] "POST /api/posts HTTP/1.1" - - "-" "curl/8.15.0"[39m
+2025-08-18 20:16:05:165 [35mhttp[39m: [35m::1 - - [18/Aug/2025:17:16:05 +0000] "POST /api/posts HTTP/1.1" - - "-" "curl/8.15.0"[39m
+2025-08-18 20:16:35:1635 [35mhttp[39m: [35m::1 - - [18/Aug/2025:17:16:35 +0000] "POST /api/users/login/advertiser HTTP/1.1" 200 176 "-" "curl/8.15.0"[39m
+2025-08-18 20:19:05:195 [35mhttp[39m: [35m::1 - - [18/Aug/2025:17:19:05 +0000] "POST /api/posts HTTP/1.1" 201 507 "-" "PostmanRuntime/7.45.0"[39m
+2025-08-20 13:21:34:2134 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-20 13:21:34:2134 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-20 13:21:35:2135 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-20 13:23:14:2314 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-20 13:23:14:2314 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-20 13:23:14:2314 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-20 14:06:49:649 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-20 14:06:49:649 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-20 14:06:54:654 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-20 14:08:08:88 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-20 14:08:08:88 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-20 14:08:13:813 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-20 14:17:09:179 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-20 14:17:09:179 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-20 14:17:14:1714 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-20 14:20:50:2050 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-20 14:20:50:2050 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-20 14:20:53:2053 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-20 14:20:59:2059 [35mhttp[39m: [35m::1 - - [20/Aug/2025:11:20:59 +0000] "GET /health HTTP/1.1" 200 111 "-" "curl/8.15.0"[39m
+2025-08-20 14:21:44:2144 [35mhttp[39m: [35m::1 - - [20/Aug/2025:11:21:44 +0000] "POST /api/users/register HTTP/1.1" 201 243 "-" "curl/8.15.0"[39m
+2025-08-20 14:22:23:2223 [35mhttp[39m: [35m::1 - - [20/Aug/2025:11:22:23 +0000] "POST /api/users/login HTTP/1.1" 200 168 "-" "curl/8.15.0"[39m
+2025-08-20 14:22:59:2259 [35mhttp[39m: [35m::1 - - [20/Aug/2025:11:22:59 +0000] "POST /api/users/login HTTP/1.1" 200 168 "-" "curl/8.15.0"[39m
+2025-08-20 14:24:37:2437 [35mhttp[39m: [35m::1 - - [20/Aug/2025:11:24:37 +0000] "GET /api/users/1/profile/overview HTTP/1.1" 200 304 "-" "curl/8.15.0"[39m
+2025-08-20 15:09:08:98 [32minfo[39m: [32m🔄 Received SIGTERM. Starting graceful shutdown...[39m
+2025-08-23 10:51:51:5151 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-23 10:51:51:5151 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-23 10:51:51:5151 [32minfo[39m: [32m🌐 Base URL: https://server-final-dmou.onrender.com[39m
+2025-08-23 10:51:53:5153 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-23 10:53:20:5320 [32minfo[39m: [32m🚀 Server is running on port 5000[39m
+2025-08-23 10:53:20:5320 [32minfo[39m: [32m📊 Environment: development[39m
+2025-08-23 10:53:20:5320 [32minfo[39m: [32m🌐 Base URL: https://server-final-dmou.onrender.com[39m
+2025-08-23 10:53:21:5321 [32minfo[39m: [32m✅ Connected to PostgreSQL database[39m
+2025-08-23 11:01:55:155 [35mhttp[39m: [35m::1 - - [23/Aug/2025:08:01:55 +0000] "GET /health HTTP/1.1" 200 112 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 OPR/120.0.0.0"[39m
+2025-08-23 11:01:55:155 [35mhttp[39m: [35m::1 - - [23/Aug/2025:08:01:55 +0000] "GET /favicon.ico HTTP/1.1" 404 69 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 OPR/120.0.0.0"[39m
+2025-08-23 11:08:46:846 [32minfo[39m: [32mOTP created for phone +963939318337, type: verification[39m
+2025-08-23 11:08:46:846 [35mhttp[39m: [35m::1 - - [23/Aug/2025:08:08:46 +0000] "POST /api/users/send-otp HTTP/1.1" 200 76 "-" "curl/8.15.0"[39m
+2025-08-23 11:08:46:846 [35mhttp[39m: [35m::1 - - [23/Aug/2025:08:08:46 +0000] "GET /api/users/otp/+963939318337/verification HTTP/1.1" 404 98 "-" "curl/8.15.0"[39m
+2025-08-23 11:10:49:1049 [32minfo[39m: [32m🔄 Received SIGTERM. Starting graceful shutdown...[39m

@@ -1,0 +1,22 @@
+2025-08-18 18:36:46:3646 [31merror[39m: [31m❌ Unhandled Rejection: Illegal arguments: undefined, number[39m
+2025-08-18 18:39:18:3918 [31merror[39m: [31m❌ Unhandled Rejection: Illegal arguments: undefined, number[39m
+2025-08-18 18:55:48:5548 [31merror[39m: [31m❌ Unhandled Rejection: Illegal arguments: undefined, number[39m
+2025-08-18 19:12:19:1219 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:12:43:1243 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:13:52:1352 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:16:18:1618 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:19:22:1922 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:20:07:207 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:20:28:2028 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:20:29:2029 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:20:29:2029 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:22:38:2238 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:24:11:2411 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:24:44:2444 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-18 19:25:16:2516 [31merror[39m: [31mUser registration failed: code=42P01 detail=relation "users" does not exist[39m
+2025-08-20 13:21:35:2135 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-20 13:23:14:2314 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-20 14:06:54:654 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-20 14:08:13:813 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-20 14:17:14:1714 [31merror[39m: [31m❌ Database connection failed[39m
+2025-08-23 10:51:53:5153 [31merror[39m: [31m❌ Database connection failed[39m
