@@ -80,14 +80,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"otp\": \"123456\",\n  \"phone\": \"+1234567890\",\n  \"fullName\": \"John Doe\",\n  \"password\": \"securepassword123\",\n  \"profileImage\": \"https://example.com/profile.jpg\"\n}"
+							"raw": "{\n  \"otp\": \"123456\",\n  \"phone\": \"+1234567890\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/verify-otp",
 							"host": ["{{base_url}}"],
 							"path": ["api", "users", "verify-otp"]
 						},
-						"description": "Step 2: Verify OTP and create user account. Requires OTP, phone, and all user data (fullName, password, profileImage)."
+						"description": "Step 2: Verify OTP and create user account. Only requires OTP and phone - all other data is retrieved from Step 1."
 					},
 					"response": []
 				},
@@ -107,14 +107,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"otp\": \"123456\",\n  \"phone\": \"+1234567891\",\n  \"fullName\": \"Jane Smith\",\n  \"password\": \"securepassword123\",\n  \"storeName\": \"Smith's Electronics\",\n  \"storeImage\": \"https://example.com/store.jpg\",\n  \"description\": \"Best electronics store in town\"\n}"
+							"raw": "{\n  \"otp\": \"123456\",\n  \"phone\": \"+1234567891\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/verify-otp",
 							"host": ["{{base_url}}"],
 							"path": ["api", "users", "verify-otp"]
 						},
-						"description": "Step 2: Verify OTP and create advertiser account. Requires OTP, phone, and all advertiser data (fullName, password, storeName, storeImage, description)."
+						"description": "Step 2: Verify OTP and create advertiser account. Only requires OTP and phone - all other data is retrieved from Step 1."
 					},
 					"response": []
 				},

@@ -59,6 +59,14 @@ exports.sendOTP = async (req, res) => {
             description,
             userType
         };
+        
+        // Store user data in a simple in-memory storage (in production, use Redis)
+        // This is just for demonstration - in real app, use proper session storage
+        if (!global.tempUserData) global.tempUserData = {};
+        global.tempUserData[phone] = {
+            ...userData,
+            expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
+        };
 
         // Create OTP (always for verification since this is the registration endpoint)
         const otpRecord = await OTPService.createOTP(phone, 'verification', userType, 10); // 10 minutes expiry
@@ -79,7 +87,7 @@ exports.sendOTP = async (req, res) => {
     }
 };
 
-// Step 2: Verify OTP and create account (all in one step)
+// Step 2: Verify OTP and create account (only OTP needed)
 exports.verifyOTP = async (req, res) => {
     const { otp, phone } = req.body;
     const userType = req.headers['x-user-type']; // Get user type from header
@@ -105,15 +113,26 @@ exports.verifyOTP = async (req, res) => {
         }
 
         // OTP is verified, now create the account
-        // Get the user data from the request body
-        const { fullName, password, profileImage, storeName, storeImage, description } = req.body;
-        
-        if (!fullName || !password) {
+        // Get the user data from temporary storage
+        if (!global.tempUserData || !global.tempUserData[phone]) {
             return res.status(400).json({
-                error: 'Full name and password are required for account creation',
-                required_fields: ['fullName', 'password']
+                error: 'User data not found or expired. Please send OTP again.',
+                required_fields: ['phone']
             });
         }
+        
+        const userData = global.tempUserData[phone];
+        
+        // Check if data is expired
+        if (Date.now() > userData.expiresAt) {
+            delete global.tempUserData[phone];
+            return res.status(400).json({
+                error: 'User data expired. Please send OTP again.',
+                required_fields: ['phone']
+            });
+        }
+        
+        const { fullName, password, profileImage, storeName, storeImage, description } = userData;
 
         // For advertisers, store name is required
         if (userType === 'advertiser' && !storeName) {
@@ -152,6 +171,9 @@ exports.verifyOTP = async (req, res) => {
             );
         }
 
+        // Clean up temporary data after successful account creation
+        delete global.tempUserData[phone];
+        
         res.status(201).json({
             message: `${userType} registered successfully`,
             user: {
