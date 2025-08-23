@@ -83,9 +83,8 @@ const requireSelfOrAdmin = (paramName) => {
             if (!req.user?.id) {
                 return next(new AppError('Unauthorized', 401));
             }
-            if (req.user.type === 'admin') {
-                return next();
-            }
+            // For now, we'll allow users to access their own resources
+            // In the future, you can add an admin user type if needed
             if (typeof targetId === 'number' && Number.isFinite(targetId) && req.user.id === targetId) {
                 return next();
             }

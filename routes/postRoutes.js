@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const postController = require('../controllers/postController');
-const { authenticateToken, authorizeRoles, requireSelfOrAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdvertiser, requireSelfOrAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
@@ -14,8 +14,8 @@ router.get('/:id/engagement', postController.getPostEngagement);
 router.get('/:id', postController.getPostDetails);
 
 // Protected routes (authentication required)
-// Only advertisers or admins can create posts; advertiser_id must match caller unless admin
-router.post('/', authenticateToken, authorizeRoles('advertiser', 'admin'), upload.single('media'), postController.createPost);
+// Only advertisers can create posts
+router.post('/', authenticateToken, requireAdvertiser, upload.single('media'), postController.createPost);
 router.post('/save', authenticateToken, postController.savePost);
 router.get('/saved/:client_id', authenticateToken, requireSelfOrAdmin('client_id'), postController.getSavedPosts);
 

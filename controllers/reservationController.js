@@ -6,13 +6,13 @@ class ReservationController {
     
     // Create a new reservation with full validation
     static async createReservation(req, res) {
-        const { client_id, post_id } = req.body;
+        const { client_id, post_id, client_type } = req.body;
 
         try {
             // 1. Validate input
-            if (!client_id || !post_id) {
+            if (!client_id || !post_id || !client_type) {
                 return res.status(400).json({ 
-                    error: 'client_id and post_id are required' 
+                    error: 'client_id, post_id, and client_type are required' 
                 });
             }
 
@@ -30,11 +30,19 @@ class ReservationController {
 
             const post = postResult.rows[0];
 
-            // 3. Check if client exists
-            const clientResult = await pool.query(
-                'SELECT id FROM users WHERE id = $1', 
-                [client_id]
-            );
+            // 3. Check if client exists (could be user or advertiser)
+            let clientResult;
+            if (client_type === 'user') {
+                clientResult = await pool.query(
+                    'SELECT id FROM users WHERE id = $1', 
+                    [client_id]
+                );
+            } else {
+                clientResult = await pool.query(
+                    'SELECT id FROM advertisers WHERE id = $1', 
+                    [client_id]
+                );
+            }
 
             if (clientResult.rows.length === 0) {
                 return res.status(404).json({ 
@@ -45,8 +53,8 @@ class ReservationController {
             // 4. Check if client already has a reservation for this post
             const existingReservation = await pool.query(`
                 SELECT id, status FROM reservations 
-                WHERE client_id = $1 AND post_id = $2
-            `, [client_id, post_id]);
+                WHERE client_id = $1 AND client_type = $2 AND post_id = $3
+            `, [client_id, client_type, post_id]);
 
             if (existingReservation.rows.length > 0 && existingReservation.rows[0].status === 'active') {
                 return res.status(409).json({ 
@@ -94,28 +102,46 @@ class ReservationController {
                 reservationId = revived.rows[0].id;
             } else {
                 const reservationResult = await pool.query(`
-                    INSERT INTO reservations (client_id, post_id, reserved_at) 
-                    VALUES ($1, $2, NOW()) 
+                    INSERT INTO reservations (client_id, client_type, post_id, reserved_at) 
+                    VALUES ($1, $2, $3, NOW()) 
                     RETURNING *
-                `, [client_id, post_id]);
+                `, [client_id, client_type, post_id]);
                 reservationId = reservationResult.rows[0].id;
             }
 
-            // 8. Get reservation details with post and user info
-            const fullReservationResult = await pool.query(`
-                SELECT 
-                    r.*,
-                    p.title as post_title,
-                    p.price,
-                    p.reservation_time,
-                    p.reservation_limit,
-                    u.name as client_name,
-                    u.email as client_email
-                FROM reservations r
-                JOIN posts p ON r.post_id = p.id
-                JOIN users u ON r.client_id = u.id
-                WHERE r.id = $1
-            `, [reservationId]);
+            // 8. Get reservation details with post and client info
+            let fullReservationResult;
+            if (client_type === 'user') {
+                fullReservationResult = await pool.query(`
+                    SELECT 
+                        r.*,
+                        p.title as post_title,
+                        p.price,
+                        p.reservation_time,
+                        p.reservation_limit,
+                        u.full_name as client_name,
+                        u.phone as client_phone
+                    FROM reservations r
+                    JOIN posts p ON r.post_id = p.id
+                    JOIN users u ON r.client_id = u.id
+                    WHERE r.id = $1
+                `, [reservationId]);
+            } else {
+                fullReservationResult = await pool.query(`
+                    SELECT 
+                        r.*,
+                        p.title as post_title,
+                        p.price,
+                        p.reservation_time,
+                        p.reservation_limit,
+                        a.full_name as client_name,
+                        a.phone as client_phone
+                    FROM reservations r
+                    JOIN posts p ON r.post_id = p.id
+                    JOIN advertisers a ON r.client_id = a.id
+                    WHERE r.id = $1
+                `, [reservationId]);
+            }
 
             res.status(201).json({
                 message: 'Reservation created successfully',
@@ -142,27 +168,57 @@ class ReservationController {
     // Get reservations for a specific client
     static async getClientReservations(req, res) {
         const { client_id } = req.params;
+        const { client_type } = req.query; // Get client_type from query params
+
+        if (!client_type || !['user', 'advertiser'].includes(client_type)) {
+            return res.status(400).json({
+                error: 'client_type query parameter is required and must be "user" or "advertiser"'
+            });
+        }
 
         try {
-            const result = await pool.query(`
-                SELECT 
-                    r.*,
-                    p.title,
-                    p.description,
-                    p.price,
-                    p.media_url,
-                    p.reservation_time,
-                    p.social_link,
-                    u.name as advertiser_name,
-                    u.email as advertiser_email,
-                    c.name as category_name
-                FROM reservations r
-                JOIN posts p ON r.post_id = p.id
-                JOIN users u ON p.advertiser_id = u.id
-                LEFT JOIN categories c ON p.category_id = c.id
-                WHERE r.client_id = $1
-                ORDER BY r.reserved_at DESC
-            `, [client_id]);
+            let result;
+            if (client_type === 'user') {
+                result = await pool.query(`
+                    SELECT 
+                        r.*,
+                        p.title,
+                        p.description,
+                        p.price,
+                        p.media_url,
+                        p.reservation_time,
+                        p.social_media_links,
+                        a.full_name as advertiser_name,
+                        a.phone as advertiser_phone,
+                        c.name as category_name
+                    FROM reservations r
+                    JOIN posts p ON r.post_id = p.id
+                    JOIN advertisers a ON p.advertiser_id = a.id
+                    LEFT JOIN categories c ON p.category_id = c.id
+                    WHERE r.client_id = $1 AND r.client_type = $2
+                    ORDER BY r.reserved_at DESC
+                `, [client_id, client_type]);
+            } else {
+                result = await pool.query(`
+                    SELECT 
+                        r.*,
+                        p.title,
+                        p.description,
+                        p.price,
+                        p.media_url,
+                        p.reservation_time,
+                        p.social_media_links,
+                        a.full_name as advertiser_name,
+                        a.phone as advertiser_phone,
+                        c.name as category_name
+                    FROM reservations r
+                    JOIN posts p ON r.post_id = p.id
+                    JOIN advertisers a ON p.advertiser_id = a.id
+                    LEFT JOIN categories c ON p.category_id = c.id
+                    WHERE r.client_id = $1 AND r.client_type = $2
+                    ORDER BY r.reserved_at DESC
+                `, [client_id, client_type]);
+            }
 
             res.json({
                 reservations: result.rows,
@@ -191,14 +247,22 @@ class ReservationController {
         const { post_id } = req.params;
 
         try {
+            // Get reservations with client info (could be users or advertisers)
             const result = await pool.query(`
                 SELECT 
                     r.*,
-                    u.name as client_name,
-                    u.email as client_email,
-                    u.phone as client_phone
+                    CASE 
+                        WHEN r.client_type = 'user' THEN u.full_name
+                        WHEN r.client_type = 'advertiser' THEN a.full_name
+                    END as client_name,
+                    CASE 
+                        WHEN r.client_type = 'user' THEN u.phone
+                        WHEN r.client_type = 'advertiser' THEN a.phone
+                    END as client_phone,
+                    r.client_type
                 FROM reservations r
-                JOIN users u ON r.client_id = u.id
+                LEFT JOIN users u ON r.client_id = u.id AND r.client_type = 'user'
+                LEFT JOIN advertisers a ON r.client_id = a.id AND r.client_type = 'advertiser'
                 WHERE r.post_id = $1 AND r.status = 'active'
                 ORDER BY r.reserved_at DESC
             `, [post_id]);

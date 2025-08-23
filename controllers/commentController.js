@@ -3,10 +3,11 @@ const { pool } = require('../config/db');
 class CommentController {
     static async createComment(req, res) {
         const userId = req.user?.id;
+        const userType = req.user?.type;
         const { post_id, content, parent_comment_id } = req.body;
 
         try {
-            if (!userId) {
+            if (!userId || !userType) {
                 return res.status(401).json({ error: 'Unauthorized' });
             }
             if (!post_id || !content || String(content).trim().length === 0) {
@@ -31,9 +32,9 @@ class CommentController {
             }
 
             const result = await pool.query(
-                `INSERT INTO comments (post_id, user_id, parent_comment_id, content)
-                 VALUES ($1, $2, $3, $4) RETURNING *`,
-                [post_id, userId, parent_comment_id || null, content]
+                `INSERT INTO comments (post_id, user_id, user_type, parent_comment_id, content)
+                 VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+                [post_id, userId, userType, parent_comment_id || null, content]
             );
 
             res.status(201).json({ comment: result.rows[0] });
@@ -48,12 +49,18 @@ class CommentController {
         try {
             const result = await pool.query(`
                 SELECT 
-                    c.id, c.post_id, c.user_id, c.parent_comment_id, c.content, c.status, c.created_at, c.updated_at,
-                    u.name as author_name,
-                    up.avatar_url as author_avatar
+                    c.id, c.post_id, c.user_id, c.user_type, c.parent_comment_id, c.content, c.status, c.created_at, c.updated_at,
+                    CASE 
+                        WHEN c.user_type = 'user' THEN u.full_name
+                        WHEN c.user_type = 'advertiser' THEN a.full_name
+                    END as author_name,
+                    CASE 
+                        WHEN c.user_type = 'user' THEN u.profile_image
+                        WHEN c.user_type = 'advertiser' THEN a.store_image
+                    END as author_avatar
                 FROM comments c
-                JOIN users u ON u.id = c.user_id
-                LEFT JOIN user_profiles up ON up.user_id = u.id
+                LEFT JOIN users u ON u.id = c.user_id AND c.user_type = 'user'
+                LEFT JOIN advertisers a ON a.id = c.user_id AND c.user_type = 'advertiser'
                 WHERE c.post_id = $1 AND c.status = 'visible'
                 ORDER BY c.created_at ASC
             `, [post_id]);
@@ -67,15 +74,15 @@ class CommentController {
 
     static async deleteComment(req, res) {
         const userId = req.user?.id;
-        const userRole = req.user?.role;
+        const userType = req.user?.type;
         const { comment_id } = req.params;
         try {
-            const existing = await pool.query('SELECT id, user_id, status FROM comments WHERE id = $1', [comment_id]);
+            const existing = await pool.query('SELECT id, user_id, user_type, status FROM comments WHERE id = $1', [comment_id]);
             if (existing.rows.length === 0) {
                 return res.status(404).json({ error: 'Comment not found' });
             }
             const comment = existing.rows[0];
-            if (comment.user_id !== userId && userRole !== 'admin') {
+            if (comment.user_id !== userId || comment.user_type !== userType) {
                 return res.status(403).json({ error: 'You can only delete your own comments' });
             }
             if (comment.status === 'deleted') {

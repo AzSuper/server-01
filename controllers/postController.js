@@ -1,6 +1,7 @@
 const { pool } = require('../config/db');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+const { logger } = require('../utils/logger');
 
 // Get post engagement (comments/saves/reservations counts)
 exports.getPostEngagement = async (req, res) => {
@@ -90,7 +91,7 @@ exports.createPost = async (req, res) => {
         // Validate advertiser exists
         logger.info(`Validating advertiser with ID: ${advertiser_id}`);
         const advertiserResult = await pool.query(
-            'SELECT id, role FROM users WHERE id = $1', 
+            'SELECT id FROM advertisers WHERE id = $1', 
             [advertiser_id]
         );
 
@@ -101,20 +102,20 @@ exports.createPost = async (req, res) => {
             });
         }
 
-        // Ensure caller is the same advertiser (or admin)
+        // Ensure caller is the same advertiser
         const caller = req.user;
         if (!caller) {
             logger.error('Unauthorized access attempt - no user in request');
             return res.status(401).json({ error: 'Unauthorized' });
         }
         
-        const isAdmin = caller.role === 'admin';
-        if (!isAdmin && parseInt(advertiser_id) !== caller.id) {
-            logger.error(`Forbidden: User ${caller.id} trying to create post for advertiser ${advertiser_id}`);
-            return res.status(403).json({ error: 'Forbidden: cannot create posts for another advertiser' });
+        // Check if caller is an advertiser and matches the advertiser_id
+        if (caller.type !== 'advertiser' || parseInt(advertiser_id) !== caller.id) {
+            logger.error(`Forbidden: User ${caller.id} (type: ${caller.type}) trying to create post for advertiser ${advertiser_id}`);
+            return res.status(403).json({ error: 'Forbidden: only advertisers can create posts for themselves' });
         }
         
-        logger.info(`Authorization passed for user ${caller.id} creating post for advertiser ${advertiser_id}`);
+        logger.info(`Authorization passed for advertiser ${caller.id} creating post`);
 
         // Upload media to Cloudinary
         logger.info(`Starting Cloudinary upload for file: ${req.file.path}`);
