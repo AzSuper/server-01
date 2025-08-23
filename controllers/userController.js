@@ -103,20 +103,12 @@ exports.sendOTP = async (req, res) => {
 
 // Step 2: Verify OTP and create account (all in one step)
 exports.verifyOTP = async (req, res) => {
-    const { fullName, phone, password, profileImage, storeName, storeImage, description, otp, type, userType } = req.body;
+    const { otp, phone, type, userType } = req.body;
 
-    if (!phone || !otp || !type || !userType || !fullName || !password) {
+    if (!phone || !otp || !type || !userType) {
         return res.status(400).json({
-            error: 'All fields are required',
-            required_fields: ['phone', 'otp', 'type', 'userType', 'fullName', 'password']
-        });
-    }
-
-    // For advertisers, store name is required
-    if (userType === 'advertiser' && !storeName) {
-        return res.status(400).json({
-            error: 'Store name is required for advertisers',
-            required_fields: ['storeName']
+            error: 'Phone, OTP, type, and user type are required',
+            required_fields: ['phone', 'otp', 'type', 'userType']
         });
     }
 
@@ -134,6 +126,28 @@ exports.verifyOTP = async (req, res) => {
 
         // OTP is verified, now create the account
         if (type === 'verification') {
+            // Get the user data from the OTP record or from a temporary storage
+            // For now, we'll need to get this from the request or implement a temporary storage solution
+            // This is a simplified version - in production you might use Redis or session storage
+            
+            // For now, we'll require the user to send the data again, but this can be optimized
+            const { fullName, password, profileImage, storeName, storeImage, description } = req.body;
+            
+            if (!fullName || !password) {
+                return res.status(400).json({
+                    error: 'Full name and password are required for account creation',
+                    required_fields: ['fullName', 'password']
+                });
+            }
+
+            // For advertisers, store name is required
+            if (userType === 'advertiser' && !storeName) {
+                return res.status(400).json({
+                    error: 'Store name is required for advertisers',
+                    required_fields: ['storeName']
+                });
+            }
+
             // Hash password
             const hashedPassword = await bcrypt.hash(password, 10);
 

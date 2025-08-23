@@ -61,11 +61,8 @@ This document describes the new authentication and registration flow for the app
 **Request Body**:
 ```json
 {
-  "fullName": "John Doe",
-  "phone": "+1234567890",
-  "password": "securepassword123",
-  "profileImage": "https://example.com/profile.jpg",
   "otp": "123456",
+  "phone": "+1234567890",
   "type": "verification",
   "userType": "user"
 }
@@ -86,6 +83,8 @@ This document describes the new authentication and registration flow for the app
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
+
+**Note**: Step 2 only requires the OTP, phone, type, and userType. All other user data (full name, password, profile image, etc.) was already provided in Step 1 and is stored temporarily by the server.
 
 ## Login Flow
 
