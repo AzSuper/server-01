@@ -79,7 +79,7 @@
 							},
 							{
 								"key": "X-Phone",
-								"value": "+1234567890"
+								"value": "{{phone_number}}"
 							}
 						],
 						"body": {
@@ -91,7 +91,7 @@
 							"host": ["{{base_url}}"],
 							"path": ["api", "users", "verify-otp"]
 						},
-						"description": "Step 2: Verify OTP and create user account. Only requires OTP in body - phone and user type are in headers, all other data retrieved from Step 1."
+						"description": "Step 2: Verify OTP and create user account. Only requires OTP in body. Phone number is automatically set from Step 1 response via {{phone_number}} variable."
 					},
 					"response": []
 				},
@@ -106,7 +106,7 @@
 							},
 							{
 								"key": "X-Phone",
-								"value": "+1234567891"
+								"value": "{{phone_number}}"
 							},
 							{
 								"key": "X-User-Type",
@@ -122,7 +122,7 @@
 							"host": ["{{base_url}}"],
 							"path": ["api", "users", "verify-otp"]
 						},
-						"description": "Step 2: Verify OTP and create advertiser account. Only requires OTP in body - phone and user type are in headers, all other data retrieved from Step 1."
+						"description": "Step 2: Verify OTP and create advertiser account. Only requires OTP in body. Phone number is automatically set from Step 1 response via {{phone_number}} variable."
 					},
 					"response": []
 				},
@@ -224,7 +224,7 @@
 							},
 							{
 								"key": "X-Phone",
-								"value": "+1234567890"
+								"value": "{{phone_number}}"
 							}
 						],
 						"body": {
@@ -255,7 +255,7 @@
 							},
 							{
 								"key": "X-Phone",
-								"value": "+1234567891"
+								"value": "{{phone_number}}"
 							}
 						],
 						"body": {
@@ -917,6 +917,15 @@
 					"        pm.environment.set('last_otp', responseJson.otp);",
 					"        console.log('OTP saved: ' + responseJson.otp);",
 					"}",
+					"}",
+					"",
+					"// Auto-save phone number from send-otp and forgot-password responses",
+					"if (pm.response.code === 200 && (pm.request.url.path.includes('/send-otp') || pm.request.url.path.includes('/forgot-password'))) {",
+					"    const responseJson = pm.response.json();",
+					"    if (responseJson.phone) {",
+					"        pm.environment.set('phone_number', responseJson.phone);",
+					"        console.log('Phone number saved: ' + responseJson.phone);",
+					"}",
 					"}"
 				]
 			}
@@ -950,6 +959,11 @@
 		},
 		{
 			"key": "post_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "phone_number",
 			"value": "",
 			"type": "string"
 		}
