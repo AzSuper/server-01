@@ -18,18 +18,22 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-User-Type",
+								"value": "user"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"fullName\": \"John Doe\",\n  \"phone\": \"+1234567890\",\n  \"password\": \"securepassword123\",\n  \"profileImage\": \"https://example.com/profile.jpg\",\n  \"type\": \"verification\",\n  \"userType\": \"user\"\n}"
+							"raw": "{\n  \"fullName\": \"John Doe\",\n  \"phone\": \"+1234567890\",\n  \"password\": \"securepassword123\",\n  \"profileImage\": \"https://example.com/profile.jpg\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/send-otp",
 							"host": ["{{base_url}}"],
 							"path": ["api", "users", "send-otp"]
 						},
-						"description": "User enters all data first, then sends OTP for verification. This is the first step in the user registration process."
+						"description": "Step 1: User enters all data and requests OTP for phone verification. This is the first step in the user registration process."
 					},
 					"response": []
 				},
@@ -41,18 +45,22 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-User-Type",
+								"value": "advertiser"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"fullName\": \"Jane Smith\",\n  \"phone\": \"+1234567891\",\n  \"password\": \"securepassword123\",\n  \"storeName\": \"Smith's Electronics\",\n  \"storeImage\": \"https://example.com/store.jpg\",\n  \"description\": \"Best electronics store in town\",\n  \"type\": \"verification\",\n  \"userType\": \"advertiser\"\n}"
+							"raw": "{\n  \"fullName\": \"Jane Smith\",\n  \"phone\": \"+1234567891\",\n  \"password\": \"securepassword123\",\n  \"storeName\": \"Smith's Electronics\",\n  \"storeImage\": \"https://example.com/store.jpg\",\n  \"description\": \"Best electronics store in town\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/send-otp",
 							"host": ["{{base_url}}"],
 							"path": ["api", "users", "send-otp"]
 						},
-						"description": "Advertiser enters all data first, then sends OTP for verification. This is the first step in the advertiser registration process."
+						"description": "Step 1: Advertiser enters all data and requests OTP for phone verification. This is the first step in the advertiser registration process."
 					},
 					"response": []
 				},
@@ -64,18 +72,22 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-User-Type",
+								"value": "user"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"otp\": \"123456\",\n  \"phone\": \"+1234567890\",\n  \"type\": \"verification\",\n  \"userType\": \"user\"\n}"
+							"raw": "{\n  \"otp\": \"123456\",\n  \"phone\": \"+1234567890\",\n  \"fullName\": \"John Doe\",\n  \"password\": \"securepassword123\",\n  \"profileImage\": \"https://example.com/profile.jpg\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/verify-otp",
 							"host": ["{{base_url}}"],
 							"path": ["api", "users", "verify-otp"]
 						},
-						"description": "Verify OTP for user registration. Only requires OTP, phone, type, and userType since all other data was provided in Step 1."
+						"description": "Step 2: Verify OTP and create user account. Requires OTP, phone, and all user data (fullName, password, profileImage)."
 					},
 					"response": []
 				},
@@ -87,18 +99,22 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-User-Type",
+								"value": "advertiser"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"otp\": \"123456\",\n  \"phone\": \"+1234567891\",\n  \"type\": \"verification\",\n  \"userType\": \"advertiser\"\n}"
+							"raw": "{\n  \"otp\": \"123456\",\n  \"phone\": \"+1234567891\",\n  \"fullName\": \"Jane Smith\",\n  \"password\": \"securepassword123\",\n  \"storeName\": \"Smith's Electronics\",\n  \"storeImage\": \"https://example.com/store.jpg\",\n  \"description\": \"Best electronics store in town\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/verify-otp",
 							"host": ["{{base_url}}"],
 							"path": ["api", "users", "verify-otp"]
 						},
-						"description": "Verify OTP for advertiser registration. Only requires OTP, phone, type, and userType since all other data was provided in Step 1."
+						"description": "Step 2: Verify OTP and create advertiser account. Requires OTP, phone, and all advertiser data (fullName, password, storeName, storeImage, description)."
 					},
 					"response": []
 				},
@@ -126,7 +142,7 @@
 					"response": []
 				}
 			],
-			"description": "Complete authentication flow: User enters all data first, then sends OTP, verifies OTP, and gets token for login."
+			"description": "Complete authentication flow: Step 1: User enters all data and requests OTP, Step 2: User verifies OTP with all data to create account and get token."
 		},
 		{
 			"name": "🔑 Password Reset",
@@ -139,11 +155,15 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-User-Type",
+								"value": "user"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+1234567890\",\n  \"userType\": \"user\"\n}"
+							"raw": "{\n  \"phone\": \"+1234567890\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/forgot-password",
@@ -162,11 +182,15 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-User-Type",
+								"value": "advertiser"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+1234567891\",\n  \"userType\": \"advertiser\"\n}"
+							"raw": "{\n  \"phone\": \"+1234567891\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/forgot-password",
@@ -185,11 +209,19 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-User-Type",
+								"value": "user"
+							},
+							{
+								"key": "X-Phone",
+								"value": "+1234567890"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+1234567890\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\",\n  \"userType\": \"user\"\n}"
+							"raw": "{\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/reset-password",
@@ -208,11 +240,19 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-User-Type",
+								"value": "advertiser"
+							},
+							{
+								"key": "X-Phone",
+								"value": "+1234567891"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+1234567891\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\",\n  \"userType\": \"advertiser\"\n}"
+							"raw": "{\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/reset-password",
@@ -802,11 +842,16 @@
 					"name": "Get Latest OTP (Development)",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "X-User-Type",
+								"value": "user"
+							}
+						],
 						"url": {
-							"raw": "{{base_url}}/api/users/otp/+1234567890/verification/user",
+							"raw": "{{base_url}}/api/users/otp/+1234567890/verification",
 							"host": ["{{base_url}}"],
-							"path": ["api", "users", "otp", "+1234567890", "verification", "user"]
+							"path": ["api", "users", "otp", "+1234567890", "verification"]
 						},
 						"description": "Get the latest OTP for testing purposes. Only available in development mode."
 					},

@@ -7,18 +7,14 @@ const OTPService = require('../utils/otpService');
 
 // Step 1: Send OTP for phone verification (user enters all data first)
 exports.sendOTP = async (req, res) => {
-    const { fullName, phone, password, profileImage, storeName, storeImage, description, type, userType } = req.body;
+    const { fullName, phone, password, profileImage, storeName, storeImage, description } = req.body;
+    const userType = req.headers['x-user-type']; // Get user type from header
 
-    if (!phone || !type || !userType || !fullName || !password) {
+    if (!phone || !userType || !fullName || !password) {
         return res.status(400).json({
-            error: 'Phone number, type, user type, full name, and password are required',
-            required_fields: ['phone', 'type', 'userType', 'fullName', 'password']
-        });
-    }
-
-    if (!['verification', 'password_reset'].includes(type)) {
-        return res.status(400).json({
-            error: 'Type must be either "verification" or "password_reset"'
+            error: 'Phone number, full name, password, and X-User-Type header are required',
+            required_fields: ['phone', 'fullName', 'password'],
+            required_headers: ['X-User-Type']
         });
     }
 
@@ -37,36 +33,18 @@ exports.sendOTP = async (req, res) => {
     }
 
     try {
-        // For password reset, check if user exists
-        if (type === 'password_reset') {
-            let userExists = false;
-            if (userType === 'user') {
-                userExists = await User.userPhoneExists(phone);
-            } else {
-                userExists = await User.advertiserPhoneExists(phone);
-            }
-            
-            if (!userExists) {
-                return res.status(404).json({ 
-                    error: `${userType} not found with this phone number` 
-                });
-            }
+        // Check if user already exists (this is for registration only)
+        let userExists = false;
+        if (userType === 'user') {
+            userExists = await User.userPhoneExists(phone);
+        } else {
+            userExists = await User.advertiserPhoneExists(phone);
         }
-
-        // For verification, check if user already exists
-        if (type === 'verification') {
-            let userExists = false;
-            if (userType === 'user') {
-                userExists = await User.userPhoneExists(phone);
-            } else {
-                userExists = await User.advertiserPhoneExists(phone);
-            }
-            
-            if (userExists) {
-                return res.status(409).json({ 
-                    error: `${userType} already exists with this phone number` 
-                });
-            }
+        
+        if (userExists) {
+            return res.status(409).json({ 
+                error: `${userType} already exists with this phone number` 
+            });
         }
 
         // Store user data temporarily (in production, you might use Redis or session)
@@ -82,8 +60,8 @@ exports.sendOTP = async (req, res) => {
             userType
         };
 
-        // Create OTP
-        const otpRecord = await OTPService.createOTP(phone, type, userType, 10); // 10 minutes expiry
+        // Create OTP (always for verification since this is the registration endpoint)
+        const otpRecord = await OTPService.createOTP(phone, 'verification', userType, 10); // 10 minutes expiry
 
         // In a real application, you would send this OTP via SMS
         // For development/testing, we'll return it in the response
@@ -103,18 +81,20 @@ exports.sendOTP = async (req, res) => {
 
 // Step 2: Verify OTP and create account (all in one step)
 exports.verifyOTP = async (req, res) => {
-    const { otp, phone, type, userType } = req.body;
+    const { otp, phone } = req.body;
+    const userType = req.headers['x-user-type']; // Get user type from header
 
-    if (!phone || !otp || !type || !userType) {
+    if (!phone || !otp || !userType) {
         return res.status(400).json({
-            error: 'Phone, OTP, type, and user type are required',
-            required_fields: ['phone', 'otp', 'type', 'userType']
+            error: 'Phone, OTP, and X-User-Type header are required',
+            required_fields: ['phone', 'otp'],
+            required_headers: ['X-User-Type']
         });
     }
 
     try {
-        // Verify OTP
-        const otpVerification = await OTPService.verifyOTP(phone, otp, type, userType);
+        // Verify OTP (always for verification since this is the registration endpoint)
+        const otpVerification = await OTPService.verifyOTP(phone, otp, 'verification', userType);
         
         if (!otpVerification.isValid) {
             return res.status(400).json({
@@ -125,82 +105,68 @@ exports.verifyOTP = async (req, res) => {
         }
 
         // OTP is verified, now create the account
-        if (type === 'verification') {
-            // Get the user data from the OTP record or from a temporary storage
-            // For now, we'll need to get this from the request or implement a temporary storage solution
-            // This is a simplified version - in production you might use Redis or session storage
-            
-            // For now, we'll require the user to send the data again, but this can be optimized
-            const { fullName, password, profileImage, storeName, storeImage, description } = req.body;
-            
-            if (!fullName || !password) {
-                return res.status(400).json({
-                    error: 'Full name and password are required for account creation',
-                    required_fields: ['fullName', 'password']
-                });
-            }
-
-            // For advertisers, store name is required
-            if (userType === 'advertiser' && !storeName) {
-                return res.status(400).json({
-                    error: 'Store name is required for advertisers',
-                    required_fields: ['storeName']
-                });
-            }
-
-            // Hash password
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            let user, token;
-
-            if (userType === 'user') {
-                // Create user
-                user = await User.createUser(fullName, phone, hashedPassword, profileImage);
-                // Mark user as verified
-                await User.updateUserVerificationStatus(user.id, true);
-                // Generate JWT
-                token = jwt.sign(
-                    { id: user.id, type: 'user', phone: user.phone },
-                    process.env.JWT_SECRET,
-                    { expiresIn: '7d' }
-                );
-            } else {
-                // Create advertiser
-                user = await User.createAdvertiser(fullName, phone, hashedPassword, storeName, storeImage, description);
-                // Mark advertiser as verified
-                await User.updateAdvertiserVerificationStatus(user.id, true);
-                // Generate JWT
-                token = jwt.sign(
-                    { id: user.id, type: 'advertiser', phone: user.phone },
-                    process.env.JWT_SECRET,
-                    { expiresIn: '7d' }
-                );
-            }
-
-            res.status(201).json({
-                message: `${userType} registered successfully`,
-                user: {
-                    id: user.id,
-                    full_name: user.full_name,
-                    phone: user.phone,
-                    type: userType,
-                    is_verified: true,
-                    profile_image: user.profile_image,
-                    store_name: user.store_name,
-                    store_image: user.store_image,
-                    description: user.description
-                },
-                token
-            });
-        } else {
-            // For password reset, just return success
-            res.json({
-                message: 'OTP verified successfully',
-                verified: true,
-                phone: phone,
-                userType: userType
+        // Get the user data from the request body
+        const { fullName, password, profileImage, storeName, storeImage, description } = req.body;
+        
+        if (!fullName || !password) {
+            return res.status(400).json({
+                error: 'Full name and password are required for account creation',
+                required_fields: ['fullName', 'password']
             });
         }
+
+        // For advertisers, store name is required
+        if (userType === 'advertiser' && !storeName) {
+            return res.status(400).json({
+                error: 'Store name is required for advertisers',
+                required_fields: ['storeName']
+            });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        let user, token;
+
+        if (userType === 'user') {
+            // Create user
+            user = await User.createUser(fullName, phone, hashedPassword, profileImage);
+            // Mark user as verified
+            await User.updateUserVerificationStatus(user.id, true);
+            // Generate JWT
+            token = jwt.sign(
+                { id: user.id, type: 'user', phone: user.phone },
+                process.env.JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+        } else {
+            // Create advertiser
+            user = await User.createAdvertiser(fullName, phone, hashedPassword, storeName, storeImage, description);
+            // Mark advertiser as verified
+            await User.updateAdvertiserVerificationStatus(user.id, true);
+            // Generate JWT
+            token = jwt.sign(
+                { id: user.id, type: 'advertiser', phone: user.phone },
+                process.env.JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+        }
+
+        res.status(201).json({
+            message: `${userType} registered successfully`,
+            user: {
+                id: user.id,
+                full_name: user.full_name,
+                phone: user.phone,
+                type: userType,
+                is_verified: true,
+                profile_image: user.profile_image,
+                store_name: user.store_name,
+                store_image: user.store_image,
+                description: user.description
+            },
+            token
+        });
     } catch (error) {
         logger.error('Error verifying OTP:', error);
         res.status(500).json({ error: 'OTP verification failed' });
@@ -277,18 +243,20 @@ exports.login = async (req, res) => {
 
 // Forgot password - send OTP
 exports.forgotPassword = async (req, res) => {
-    const { phone, userType } = req.body;
+    const { phone } = req.body;
+    const userType = req.headers['x-user-type']; // Get user type from header
 
     if (!phone || !userType) {
         return res.status(400).json({
-            error: 'Phone number and user type are required',
-            required_fields: ['phone', 'userType']
+            error: 'Phone number and X-User-Type header are required',
+            required_fields: ['phone'],
+            required_headers: ['X-User-Type']
         });
     }
 
     if (!['user', 'advertiser'].includes(userType)) {
         return res.status(400).json({
-            error: 'User type must be either "user" or "advertiser"'
+            error: 'X-User-Type header must be either "user" or "advertiser"'
         });
     }
 
@@ -325,12 +293,15 @@ exports.forgotPassword = async (req, res) => {
 
 // Reset password with OTP
 exports.resetPassword = async (req, res) => {
-    const { phone, otp, newPassword, userType } = req.body;
+    const { otp, newPassword } = req.body;
+    const userType = req.headers['x-user-type']; // Get user type from header
+    const phone = req.headers['x-phone']; // Get phone from header
 
     if (!phone || !otp || !newPassword || !userType) {
         return res.status(400).json({
-            error: 'All fields are required',
-            required_fields: ['phone', 'otp', 'newPassword', 'userType']
+            error: 'OTP, new password, X-User-Type header, and X-Phone header are required',
+            required_fields: ['otp', 'newPassword'],
+            required_headers: ['X-User-Type', 'X-Phone']
         });
     }
 
@@ -500,12 +471,13 @@ exports.cleanupOTPs = async (req, res) => {
 // Get latest OTP for testing (development only)
 exports.getLatestOTP = async (req, res) => {
     try {
-        const { phone, type, userType } = req.params;
+        const { phone, type } = req.params;
+        const userType = req.headers['x-user-type']; // Get user type from header
         
         if (!phone || !type || !userType) {
             return res.status(400).json({
                 success: false,
-                message: 'Phone number, OTP type, and user type are required'
+                message: 'Phone number, OTP type, and X-User-Type header are required'
             });
         }
 
