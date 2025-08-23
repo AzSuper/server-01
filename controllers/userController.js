@@ -89,14 +89,15 @@ exports.sendOTP = async (req, res) => {
 
 // Step 2: Verify OTP and create account (only OTP needed)
 exports.verifyOTP = async (req, res) => {
-    const { otp, phone } = req.body;
+    const { otp } = req.body;
     const userType = req.headers['x-user-type']; // Get user type from header
+    const phone = req.headers['x-phone']; // Get phone from header
 
-    if (!phone || !otp || !userType) {
+    if (!otp || !userType || !phone) {
         return res.status(400).json({
-            error: 'Phone, OTP, and X-User-Type header are required',
-            required_fields: ['phone', 'otp'],
-            required_headers: ['X-User-Type']
+            error: 'OTP, X-User-Type header, and X-Phone header are required',
+            required_fields: ['otp'],
+            required_headers: ['X-User-Type', 'X-Phone']
         });
     }
 

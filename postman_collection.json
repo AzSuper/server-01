@@ -76,18 +76,22 @@
 							{
 								"key": "X-User-Type",
 								"value": "user"
+							},
+							{
+								"key": "X-Phone",
+								"value": "+1234567890"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"otp\": \"123456\",\n  \"phone\": \"+1234567890\"\n}"
+							"raw": "{\n  \"otp\": \"123456\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/verify-otp",
 							"host": ["{{base_url}}"],
 							"path": ["api", "users", "verify-otp"]
 						},
-						"description": "Step 2: Verify OTP and create user account. Only requires OTP and phone - all other data is retrieved from Step 1."
+						"description": "Step 2: Verify OTP and create user account. Only requires OTP in body - phone and user type are in headers, all other data retrieved from Step 1."
 					},
 					"response": []
 				},
@@ -101,20 +105,24 @@
 								"value": "application/json"
 							},
 							{
+								"key": "X-Phone",
+								"value": "+1234567891"
+							},
+							{
 								"key": "X-User-Type",
 								"value": "advertiser"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"otp\": \"123456\",\n  \"phone\": \"+1234567891\"\n}"
+							"raw": "{\n  \"otp\": \"123456\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/users/verify-otp",
 							"host": ["{{base_url}}"],
 							"path": ["api", "users", "verify-otp"]
 						},
-						"description": "Step 2: Verify OTP and create advertiser account. Only requires OTP and phone - all other data is retrieved from Step 1."
+						"description": "Step 2: Verify OTP and create advertiser account. Only requires OTP in body - phone and user type are in headers, all other data retrieved from Step 1."
 					},
 					"response": []
 				},
