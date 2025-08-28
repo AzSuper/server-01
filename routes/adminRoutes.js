@@ -3,35 +3,33 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
-// Admin authentication
+// Admin authentication - NO MIDDLEWARE APPLIED
 router.post('/login', adminController.adminLogin);
 
 // Protected admin routes - require admin authentication
-router.use(authenticateToken, requireAdmin);
-
 // Dashboard statistics
-router.get('/dashboard/stats', adminController.getDashboardStats);
+router.get('/dashboard/stats', authenticateToken, requireAdmin, adminController.getDashboardStats);
 
 // User management
-router.get('/users', adminController.getAllUsers);
-router.delete('/users/:id', adminController.deleteUser);
+router.get('/users', authenticateToken, requireAdmin, adminController.getAllUsers);
+router.delete('/users/:id', authenticateToken, requireAdmin, adminController.deleteUser);
 
 // Advertiser management
-router.get('/advertisers', adminController.getAllAdvertisers);
-router.delete('/advertisers/:id', adminController.deleteAdvertiser);
+router.get('/advertisers', authenticateToken, requireAdmin, adminController.getAllAdvertisers);
+router.delete('/advertisers/:id', authenticateToken, requireAdmin, adminController.deleteAdvertiser);
 
 // Post management
-router.get('/posts', adminController.getAllPosts);
-router.delete('/posts/:id', adminController.deletePost);
+router.get('/posts', authenticateToken, requireAdmin, adminController.getAllPosts);
+router.delete('/posts/:id', authenticateToken, requireAdmin, adminController.deletePost);
 
 // Reservation management
-router.get('/reservations', adminController.getAllReservations);
-router.delete('/reservations/:id', adminController.deleteReservation);
+router.get('/reservations', authenticateToken, requireAdmin, adminController.getAllReservations);
+router.delete('/reservations/:id', authenticateToken, requireAdmin, adminController.deleteReservation);
 
 // Category management
-router.get('/categories', adminController.getAllCategories);
-router.post('/categories', adminController.createCategory);
-router.put('/categories/:id', adminController.updateCategory);
-router.delete('/categories/:id', adminController.deleteCategory);
+router.get('/categories', authenticateToken, requireAdmin, adminController.getAllCategories);
+router.post('/categories', authenticateToken, requireAdmin, adminController.createCategory);
+router.put('/categories/:id', authenticateToken, requireAdmin, adminController.updateCategory);
+router.delete('/categories/:id', authenticateToken, requireAdmin, adminController.deleteCategory);
 
 module.exports = router;
