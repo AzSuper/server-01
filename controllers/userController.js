@@ -526,3 +526,203 @@ exports.getLatestOTP = async (req, res) => {
         });
     }
 };
+
+// Get all users (admin only)
+exports.getAllUsers = async (req, res) => {
+    try {
+        const { page = 1, limit = 20, search = '', verified } = req.query;
+        
+        // Parse and validate parameters
+        const pageNum = parseInt(page) || 1;
+        const limitNum = Math.min(parseInt(limit) || 20, 100); // Max 100 per page
+        const searchTerm = search || '';
+        const verifiedFilter = verified === 'true' ? true : verified === 'false' ? false : null;
+
+        const result = await User.getAllUsers(pageNum, limitNum, searchTerm, verifiedFilter);
+
+        res.json({
+            success: true,
+            message: 'Users retrieved successfully',
+            data: result.users,
+            pagination: result.pagination
+        });
+    } catch (error) {
+        logger.error('Error getting all users:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve users'
+        });
+    }
+};
+
+// Get all advertisers (admin only)
+exports.getAllAdvertisers = async (req, res) => {
+    try {
+        const { page = 1, limit = 20, search = '', verified } = req.query;
+        
+        // Parse and validate parameters
+        const pageNum = parseInt(page) || 1;
+        const limitNum = Math.min(parseInt(limit) || 20, 100); // Max 100 per page
+        const searchTerm = search || '';
+        const verifiedFilter = verified === 'true' ? true : verified === 'false' ? false : null;
+
+        const result = await User.getAllAdvertisers(pageNum, limitNum, searchTerm, verifiedFilter);
+
+        res.json({
+            success: true,
+            message: 'Advertisers retrieved successfully',
+            data: result.advertisers,
+            pagination: result.pagination
+        });
+    } catch (error) {
+        logger.error('Error getting all advertisers:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve advertisers'
+        });
+    }
+};
+
+// Get all users and advertisers combined (admin only)
+exports.getAllUsersCombined = async (req, res) => {
+    try {
+        const { page = 1, limit = 20, search = '', userType, verified } = req.query;
+        
+        // Parse and validate parameters
+        const pageNum = parseInt(page) || 1;
+        const limitNum = Math.min(parseInt(limit) || 20, 100); // Max 100 per page
+        const searchTerm = search || '';
+        const userTypeFilter = userType && ['user', 'advertiser'].includes(userType) ? userType : null;
+        const verifiedFilter = verified === 'true' ? true : verified === 'false' ? false : null;
+
+        const result = await User.getAllUsersCombined(pageNum, limitNum, searchTerm, userTypeFilter, verifiedFilter);
+
+        res.json({
+            success: true,
+            message: 'Users and advertisers retrieved successfully',
+            data: result.users,
+            pagination: result.pagination
+        });
+    } catch (error) {
+        logger.error('Error getting all users combined:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve users and advertisers'
+        });
+    }
+};
+
+// Update user verification status (admin only)
+exports.updateUserVerificationStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { isVerified, userType } = req.body;
+
+        if (typeof isVerified !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: 'isVerified must be a boolean value'
+            });
+        }
+
+        if (!userType || !['user', 'advertiser'].includes(userType)) {
+            return res.status(400).json({
+                success: false,
+                message: 'userType must be either "user" or "advertiser"'
+            });
+        }
+
+        let updatedUser;
+        if (userType === 'user') {
+            updatedUser = await User.updateUserVerificationStatus(id, isVerified);
+        } else {
+            updatedUser = await User.updateAdvertiserVerificationStatus(id, isVerified);
+        }
+
+        if (!updatedUser) {
+            return res.status(404).json({
+                success: false,
+                message: `${userType} not found`
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `${userType} verification status updated successfully`,
+            data: {
+                id: updatedUser.id,
+                is_verified: updatedUser.is_verified,
+                updated_at: updatedUser.updated_at
+            }
+        });
+    } catch (error) {
+        logger.error('Error updating user verification status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update verification status'
+        });
+    }
+};
+
+// Delete user (admin only)
+exports.deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userType } = req.body;
+
+        if (!userType || !['user', 'advertiser'].includes(userType)) {
+            return res.status(400).json({
+                success: false,
+                message: 'userType must be either "user" or "advertiser"'
+            });
+        }
+
+        let deletedUser;
+        if (userType === 'user') {
+            // Delete user profiles first (due to foreign key constraints)
+            await pool.query('DELETE FROM user_profiles WHERE user_id = $1', [id]);
+            await pool.query('DELETE FROM user_settings WHERE user_id = $1 AND user_type = $2', [id, userType]);
+            
+            // Delete user points if they exist
+            await pool.query('DELETE FROM user_points WHERE user_id = $1 AND user_type = $2', [id, userType]);
+            
+            // Delete the user
+            const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+            deletedUser = result.rows[0];
+        } else {
+            // Delete advertiser profiles first
+            await pool.query('DELETE FROM advertiser_profiles WHERE advertiser_id = $1', [id]);
+            await pool.query('DELETE FROM user_settings WHERE user_id = $1 AND user_type = $2', [id, userType]);
+            
+            // Delete advertiser points if they exist
+            await pool.query('DELETE FROM user_points WHERE user_id = $1 AND user_type = $2', [id, userType]);
+            
+            // Delete the advertiser
+            const result = await pool.query('DELETE FROM advertisers WHERE id = $1 RETURNING *', [id]);
+            deletedUser = result.rows[0];
+        }
+
+        if (!deletedUser) {
+            return res.status(404).json({
+                success: false,
+                message: `${userType} not found`
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `${userType} deleted successfully`,
+            data: {
+                id: deletedUser.id,
+                full_name: deletedUser.full_name,
+                phone: deletedUser.phone
+            }
+        });
+    } catch (error) {
+        logger.error('Error deleting user:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete user'
+        });
+    }
+};

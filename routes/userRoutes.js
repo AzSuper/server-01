@@ -23,6 +23,13 @@ router.put('/profile', authenticateToken, userController.updateUserProfile);
 // Admin Routes
 router.get('/:id', authenticateToken, userController.getUserById);
 
+// New Admin Routes for User Management
+router.get('/admin/users', authenticateToken, userController.getAllUsers);
+router.get('/admin/advertisers', authenticateToken, userController.getAllAdvertisers);
+router.get('/admin/users/combined', authenticateToken, userController.getAllUsersCombined);
+router.put('/admin/users/:id/verification', authenticateToken, userController.updateUserVerificationStatus);
+router.delete('/admin/users/:id', authenticateToken, userController.deleteUser);
+
 // Utility Routes
 router.post('/cleanup-otps', userController.cleanupOTPs);
 
