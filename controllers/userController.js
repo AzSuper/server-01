@@ -264,52 +264,80 @@ exports.login = async (req, res) => {
     }
 };
 
-// Forgot password - send OTP
-exports.forgotPassword = async (req, res) => {
+// Forgot password for users - send OTP for password reset
+exports.forgotPasswordUser = async (req, res) => {
     const { phone } = req.body;
-    const userType = req.headers['x-user-type']; // Get user type from header
 
-    if (!phone || !userType) {
+    if (!phone) {
         return res.status(400).json({
-            error: 'Phone number and X-User-Type header are required',
-            required_fields: ['phone'],
-            required_headers: ['X-User-Type']
-        });
-    }
-
-    if (!['user', 'advertiser'].includes(userType)) {
-        return res.status(400).json({
-            error: 'X-User-Type header must be either "user" or "advertiser"'
+            error: 'Phone number is required',
+            required_fields: ['phone']
         });
     }
 
     try {
         // Check if user exists
-        let userExists = false;
-        if (userType === 'user') {
-            userExists = await User.userPhoneExists(phone);
-        } else {
-            userExists = await User.advertiserPhoneExists(phone);
-        }
+        const userExists = await User.userPhoneExists(phone);
         
         if (!userExists) {
             return res.status(404).json({ 
-                error: `${userType} not found with this phone number` 
+                error: 'User not found with this phone number' 
             });
         }
 
-        // Send OTP for password reset
-        const otpRecord = await OTPService.createOTP(phone, 'password_reset', userType, 10);
+        // Create OTP for password reset
+        const otpRecord = await OTPService.createOTP(phone, 'password_reset', 'user', 10); // 10 minutes expiry
 
+        // In a real application, you would send this OTP via SMS
+        // For development/testing, we'll return it in the response
         res.json({
-            message: 'Password reset OTP sent successfully',
+            message: 'Password reset OTP sent successfully for user',
             otp: process.env.NODE_ENV === 'development' ? otpRecord.otp_code : undefined,
             expires_in: '10 minutes',
             phone: phone,
-            userType: userType
+            userType: 'user'
         });
     } catch (error) {
-        logger.error('Error in forgot password:', error);
+        logger.error('Error sending password reset OTP for user:', error);
+        res.status(500).json({ error: 'Failed to send password reset OTP' });
+    }
+};
+
+// Forgot password for advertisers - send OTP for password reset
+exports.forgotPasswordAdvertiser = async (req, res) => {
+    const { phone } = req.body;
+
+    if (!phone) {
+        return res.status(400).json({
+            error: 'Phone number is required',
+            required_fields: ['phone']
+        });
+    }
+
+    try {
+        // Check if advertiser exists
+        const advertiserExists = await User.advertiserPhoneExists(phone);
+        
+        if (!advertiserExists) {
+            return res.status(404).json({ 
+                error: 'Advertiser not found with this phone number' 
+            });
+        }
+
+        // Create OTP for password reset
+        const otpRecord = await OTPService.createOTP(phone, 'password_reset', 'advertiser', 10); // 10 minutes expiry
+
+        // In a real application, you would send this OTP via SMS
+        // For development/testing, we'll return it in the response
+        res.json({
+            message: 'Password reset OTP sent successfully for advertiser',
+            otp: process.env.NODE_ENV === 'development' ? otpRecord.otp_code : undefined,
+            expires_in: '10 minutes',
+            phone: phone,
+            userType: 'advertiser'
+        });
+    } catch (error) {
+        logger.error('Error sending password reset OTP for advertiser:', error);
         res.status(500).json({ error: 'Failed to send password reset OTP' });
     }
 };

@@ -119,11 +119,24 @@ const requireUser = (req, res, next) => {
     }
 };
 
+// Ensure only admins can access
+const requireAdmin = (req, res, next) => {
+    try {
+        if (req.user?.type !== 'admin') {
+            return next(new AppError('Forbidden: admin access required', 403));
+        }
+        next();
+    } catch (error) {
+        next(new AppError('Authorization failed', 403));
+    }
+};
+
 module.exports = { 
     authenticateToken, 
     optionalAuth, 
     authorizeTypes, 
     requireSelfOrAdmin, 
     requireAdvertiser, 
-    requireUser 
+    requireUser,
+    requireAdmin
 };

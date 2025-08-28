@@ -4,6 +4,19 @@
 -- Enable UUID extension (optional, for better ID handling)
 -- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Admin table for dashboard access
+CREATE TABLE IF NOT EXISTS admins (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    is_active BOOLEAN DEFAULT true,
+    permissions JSONB DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Users table - Updated for new authentication flow
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -59,7 +72,7 @@ CREATE TABLE IF NOT EXISTS posts (
     title VARCHAR(255) NOT NULL CHECK (char_length(trim(title)) > 0),
     description TEXT,
     price DECIMAL(10,2) CHECK (price IS NULL OR price >= 0),
-    old_price DECIMAL(10,2) CHECK (old_price IS NULL OR old_price >= 0),
+    old_price DECIMAL(10,2) CHECK (old_price IS NULL OR price >= 0),
     media_url TEXT,
     expiration_date TIMESTAMP,
     with_reservation BOOLEAN DEFAULT false,
@@ -103,92 +116,43 @@ BEGIN
     END IF;
 END $$;
 
--- Saved posts table (for user bookmarks)
-CREATE TABLE IF NOT EXISTS saved_posts (
-    id SERIAL PRIMARY KEY,
-    client_id INTEGER NOT NULL, -- Can be either user or advertiser
-    client_type VARCHAR(20) NOT NULL CHECK (client_type IN ('user', 'advertiser')),
-    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-    saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(client_id, post_id, client_type)
-);
+-- Insert default admin user (password: admin123)
+INSERT INTO admins (username, password_hash, full_name, email, permissions) 
+VALUES (
+    'admin',
+    '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- admin123
+    'System Administrator',
+    'admin@example.com',
+    '{"users": true, "advertisers": true, "posts": true, "reservations": true, "categories": true}'
+) ON CONFLICT (username) DO NOTHING;
 
--- Post likes table - Updated to reference both user types
-CREATE TABLE IF NOT EXISTS post_likes (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL, -- Can be either user or advertiser
-    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('user', 'advertiser')),
-    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, post_id, user_type)
-);
+-- Insert default categories
+INSERT INTO categories (name, description) VALUES
+('Electronics', 'Electronic devices and gadgets'),
+('Fashion', 'Clothing, shoes, and accessories'),
+('Home & Garden', 'Home improvement and garden supplies'),
+('Sports', 'Sports equipment and outdoor gear'),
+('Books', 'Books, magazines, and educational materials'),
+('Automotive', 'Cars, motorcycles, and auto parts'),
+('Health & Beauty', 'Health products and beauty supplies'),
+('Toys & Games', 'Toys, games, and entertainment'),
+('Food & Beverages', 'Food items and beverages'),
+('Other', 'Miscellaneous items')
+ON CONFLICT (name) DO NOTHING;
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
-CREATE INDEX IF NOT EXISTS idx_users_is_verified ON users(is_verified);
 CREATE INDEX IF NOT EXISTS idx_advertisers_phone ON advertisers(phone);
-CREATE INDEX IF NOT EXISTS idx_advertisers_is_verified ON advertisers(is_verified);
-
--- OTP indexes
-CREATE INDEX IF NOT EXISTS idx_otp_codes_phone ON otp_codes(phone);
-CREATE INDEX IF NOT EXISTS idx_otp_codes_type ON otp_codes(type);
-CREATE INDEX IF NOT EXISTS idx_otp_codes_user_type ON otp_codes(user_type);
-CREATE INDEX IF NOT EXISTS idx_otp_codes_expires_at ON otp_codes(expires_at);
-
--- Posts indexes
 CREATE INDEX IF NOT EXISTS idx_posts_advertiser_id ON posts(advertiser_id);
 CREATE INDEX IF NOT EXISTS idx_posts_category_id ON posts(category_id);
 CREATE INDEX IF NOT EXISTS idx_posts_type ON posts(type);
-CREATE INDEX IF NOT EXISTS idx_posts_with_reservation ON posts(with_reservation);
-CREATE INDEX IF NOT EXISTS idx_posts_expiration_date ON posts(expiration_date);
-CREATE INDEX IF NOT EXISTS idx_posts_social_media_links_gin ON posts USING GIN (social_media_links);
-CREATE INDEX IF NOT EXISTS idx_posts_likes_count ON posts(likes_count);
--- Optimize queries by reservation deadline only for posts that accept reservations
-CREATE INDEX IF NOT EXISTS idx_posts_reservation_deadline ON posts(reservation_time) WHERE with_reservation = true;
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at);
-
--- Reservations indexes
-CREATE INDEX IF NOT EXISTS idx_reservations_client_id ON reservations(client_id);
-CREATE INDEX IF NOT EXISTS idx_reservations_client_type ON reservations(client_type);
 CREATE INDEX IF NOT EXISTS idx_reservations_post_id ON reservations(post_id);
-CREATE INDEX IF NOT EXISTS idx_reservations_reserved_at ON reservations(reserved_at);
-CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
+CREATE INDEX IF NOT EXISTS idx_reservations_client_id ON reservations(client_id, client_type);
+CREATE INDEX IF NOT EXISTS idx_otp_codes_phone ON otp_codes(phone);
+CREATE INDEX IF NOT EXISTS idx_otp_codes_expires_at ON otp_codes(expires_at);
 
--- Saved posts indexes
-CREATE INDEX IF NOT EXISTS idx_saved_posts_client_id ON saved_posts(client_id);
-CREATE INDEX IF NOT EXISTS idx_saved_posts_client_type ON saved_posts(client_type);
-CREATE INDEX IF NOT EXISTS idx_saved_posts_post_id ON saved_posts(post_id);
-
--- Post likes indexes
-CREATE INDEX IF NOT EXISTS idx_post_likes_user_id ON post_likes(user_id);
-CREATE INDEX IF NOT EXISTS idx_post_likes_user_type ON post_likes(user_type);
-CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_id);
-CREATE INDEX IF NOT EXISTS idx_post_likes_created_at ON post_likes(created_at);
-
--- Create composite indexes for common query patterns
-CREATE INDEX IF NOT EXISTS idx_posts_advertiser_type ON posts(advertiser_id, type);
-CREATE INDEX IF NOT EXISTS idx_posts_category_type ON posts(category_id, type);
-CREATE INDEX IF NOT EXISTS idx_reservations_post_client ON reservations(post_id, client_id, client_type);
-CREATE INDEX IF NOT EXISTS idx_post_likes_user_post ON post_likes(user_id, post_id, user_type);
-
--- Insert some default categories
-INSERT INTO categories (name, description) VALUES
-    ('Electronics', 'Electronic devices and gadgets'),
-    ('Fashion', 'Clothing, accessories, and style items'),
-    ('Home & Garden', 'Home improvement and garden supplies'),
-    ('Sports', 'Sports equipment and athletic gear'),
-    ('Books', 'Books, magazines, and educational materials'),
-    ('Automotive', 'Cars, parts, and automotive services'),
-    ('Health & Beauty', 'Health products and beauty supplies'),
-    ('Food & Beverage', 'Food items and beverages'),
-    ('Toys & Games', 'Toys, games, and entertainment'),
-    ('Other', 'Miscellaneous items and services')
-ON CONFLICT (name) DO NOTHING;
-
--- Ensure case-insensitive uniqueness for category names as well
-CREATE UNIQUE INDEX IF NOT EXISTS uq_categories_name_lower ON categories (LOWER(name));
-
--- Create updated_at trigger function
+-- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -197,7 +161,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create triggers for updated_at columns
+-- Create triggers for updated_at
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -205,6 +169,12 @@ CREATE TRIGGER update_advertisers_updated_at BEFORE UPDATE ON advertisers
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_posts_updated_at BEFORE UPDATE ON posts
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_admins_updated_at BEFORE UPDATE ON admins
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Enforce that only advertisers can create posts

@@ -13,7 +13,8 @@ router.post('/verify-otp', userController.verifyOTP);
 router.post('/login', userController.login);
 
 // Password Reset Routes
-router.post('/forgot-password', userController.forgotPassword);
+router.post('/forgot-password/user', userController.forgotPasswordUser);
+router.post('/forgot-password/advertiser', userController.forgotPasswordAdvertiser);
 router.post('/reset-password', userController.resetPassword);
 
 // Protected Routes (require authentication)

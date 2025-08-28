@@ -163,10 +163,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
-							},
-							{
-								"key": "X-User-Type",
-								"value": "user"
 							}
 						],
 						"body": {
@@ -174,9 +170,9 @@
 							"raw": "{\n  \"phone\": \"+1234567890\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/users/forgot-password",
+							"raw": "{{base_url}}/api/users/forgot-password/user",
 							"host": ["{{base_url}}"],
-							"path": ["api", "users", "forgot-password"]
+							"path": ["api", "users", "forgot-password", "user"]
 						},
 						"description": "Request password reset OTP for a user account."
 					},
@@ -190,10 +186,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
-							},
-							{
-								"key": "X-User-Type",
-								"value": "advertiser"
 							}
 						],
 						"body": {
@@ -201,9 +193,9 @@
 							"raw": "{\n  \"phone\": \"+1234567891\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/users/forgot-password",
+							"raw": "{{base_url}}/api/users/forgot-password/advertiser",
 							"host": ["{{base_url}}"],
-							"path": ["api", "users", "forgot-password"]
+							"path": ["api", "users", "forgot-password", "advertiser"]
 						},
 						"description": "Request password reset OTP for an advertiser account."
 					},
@@ -926,6 +918,15 @@
 					"        pm.environment.set('phone_number', responseJson.phone);",
 					"        console.log('Phone number saved: ' + responseJson.phone);",
 					"}",
+					"}",
+					"",
+					"// Auto-save admin token from admin login",
+					"if (pm.response.code === 200 && pm.request.url.path.includes('/admin/login')) {",
+					"    const responseJson = pm.response.json();",
+					"    if (responseJson.token) {",
+					"        pm.environment.set('admin_token', responseJson.token);",
+					"        console.log('Admin token saved automatically');",
+					"}",
 					"}"
 				]
 			}
@@ -964,6 +965,11 @@
 		},
 		{
 			"key": "phone_number",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
 			"value": "",
 			"type": "string"
 		}
