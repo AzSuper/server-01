@@ -527,6 +527,34 @@ exports.getLatestOTP = async (req, res) => {
     }
 };
 
+// Get all users (public - for dashboard display)
+exports.getAllUsersPublic = async (req, res) => {
+    try {
+        const { page = 1, limit = 20, search = '', verified } = req.query;
+        
+        // Parse and validate parameters
+        const pageNum = parseInt(page) || 1;
+        const limitNum = Math.min(parseInt(limit) || 20, 100); // Max 100 per page
+        const searchTerm = search || '';
+        const verifiedFilter = verified === 'true' ? true : verified === 'false' ? false : null;
+
+        const result = await User.getAllUsers(pageNum, limitNum, searchTerm, verifiedFilter);
+
+        res.json({
+            success: true,
+            message: 'Users retrieved successfully',
+            data: result.users,
+            pagination: result.pagination
+        });
+    } catch (error) {
+        logger.error('Error getting all users:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve users'
+        });
+    }
+};
+
 // Get all users (admin only)
 exports.getAllUsers = async (req, res) => {
     try {

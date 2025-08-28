@@ -520,6 +520,160 @@ class ReservationController {
             });
         }
     }
+
+    // Admin: Get all reservations with detailed information
+    static async getAllReservationsAdmin(req, res) {
+        try {
+            const { page = 1, limit = 20, status, client_type, post_id } = req.query;
+            
+            const pageNum = parseInt(page) || 1;
+            const limitNum = Math.min(parseInt(limit) || 20, 100);
+            const offset = (pageNum - 1) * limitNum;
+            
+            let whereClause = 'WHERE 1=1';
+            const params = [];
+            let paramCount = 0;
+
+            if (status && ['active', 'cancelled'].includes(status)) {
+                paramCount++;
+                whereClause += ` AND r.status = $${paramCount}`;
+                params.push(status);
+            }
+
+            if (client_type && ['user', 'advertiser'].includes(client_type)) {
+                paramCount++;
+                whereClause += ` AND r.client_type = $${paramCount}`;
+                params.push(client_type);
+            }
+
+            if (post_id) {
+                paramCount++;
+                whereClause += ` AND r.post_id = $${paramCount}`;
+                params.push(post_id);
+            }
+
+            const query = `
+                SELECT 
+                    r.*,
+                    p.title as post_title,
+                    p.type as post_type,
+                    p.media_url as post_media,
+                    a.store_name as advertiser_name,
+                    a.is_verified as advertiser_verified,
+                    CASE 
+                        WHEN r.client_type = 'user' THEN u.full_name
+                        WHEN r.client_type = 'advertiser' THEN adv.full_name
+                    END as client_name,
+                    CASE 
+                        WHEN r.client_type = 'user' THEN u.phone
+                        WHEN r.client_type = 'advertiser' THEN adv.phone
+                    END as client_phone
+                FROM reservations r
+                JOIN posts p ON r.post_id = p.id
+                JOIN advertisers a ON p.advertiser_id = a.id
+                LEFT JOIN users u ON r.client_id = u.id AND r.client_type = 'user'
+                LEFT JOIN advertisers adv ON r.client_id = adv.id AND r.client_type = 'advertiser'
+                ${whereClause}
+                ORDER BY r.reserved_at DESC
+                LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
+            `;
+
+            params.push(limitNum, offset);
+            const result = await pool.query(query, params);
+
+            // Get total count
+            const countQuery = `
+                SELECT COUNT(*) as total
+                FROM reservations r
+                ${whereClause}
+            `;
+            const countResult = await pool.query(countQuery, params.slice(0, -2));
+            const total = parseInt(countResult.rows[0].total);
+
+            res.json({
+                success: true,
+                message: 'Reservations retrieved successfully',
+                data: result.rows,
+                pagination: {
+                    current_page: pageNum,
+                    total_pages: Math.ceil(total / limitNum),
+                    total_reservations: total,
+                    reservations_per_page: limitNum
+                }
+            });
+        } catch (error) {
+            logger.error('Error getting all reservations admin:', error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Failed to retrieve reservations' 
+            });
+        }
+    }
+
+    // Admin: Get reservation statistics
+    static async getReservationStats(req, res) {
+        try {
+            const statsQuery = `
+                SELECT 
+                    COUNT(*) as total_reservations,
+                    COUNT(CASE WHEN status = 'active' THEN 1 END) as active_reservations,
+                    COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_reservations,
+                    COUNT(CASE WHEN client_type = 'user' THEN 1 END) as user_reservations,
+                    COUNT(CASE WHEN client_type = 'advertiser' THEN 1 END) as advertiser_reservations,
+                    COUNT(CASE WHEN reserved_at >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as reservations_last_7_days,
+                    COUNT(CASE WHEN reserved_at >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as reservations_last_30_days
+                FROM reservations
+            `;
+
+            const statsResult = await pool.query(statsQuery);
+            const stats = statsResult.rows[0];
+
+            // Get top posts by reservations
+            const topPostsQuery = `
+                SELECT 
+                    p.title,
+                    p.type,
+                    COUNT(r.id) as reservation_count,
+                    a.store_name as advertiser_name
+                FROM posts p
+                JOIN advertisers a ON p.advertiser_id = a.id
+                LEFT JOIN reservations r ON p.id = r.post_id AND r.status = 'active'
+                WHERE p.with_reservation = true
+                GROUP BY p.id, p.title, p.type, a.store_name
+                ORDER BY reservation_count DESC
+                LIMIT 10
+            `;
+            const topPostsResult = await pool.query(topPostsQuery);
+
+            // Get reservation trends by day (last 7 days)
+            const trendsQuery = `
+                SELECT 
+                    DATE(reserved_at) as date,
+                    COUNT(*) as count
+                FROM reservations
+                WHERE reserved_at >= CURRENT_DATE - INTERVAL '7 days'
+                GROUP BY DATE(reserved_at)
+                ORDER BY date
+            `;
+            const trendsResult = await pool.query(trendsQuery);
+
+            res.json({
+                success: true,
+                message: 'Reservation statistics retrieved successfully',
+                data: {
+                    overview: stats,
+                    top_posts: topPostsResult.rows,
+                    trends: trendsResult.rows
+                }
+            });
+        } catch (error) {
+            logger.error('Error getting reservation statistics:', error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Failed to retrieve reservation statistics' 
+            });
+        }
+    }
 }
 
 module.exports = ReservationController;

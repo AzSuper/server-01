@@ -13,6 +13,10 @@ router.get('/advertiser/:advertiser_id', authenticateToken, requireSelfOrAdmin('
 router.get('/:id/engagement', postController.getPostEngagement);
 router.get('/:id', postController.getPostDetails);
 
+// Admin routes for dashboard
+router.get('/admin/all', postController.getAllPostsAdmin);
+router.get('/admin/stats', postController.getPostStats);
+
 // Protected routes (authentication required)
 // Only advertisers can create posts
 router.post('/', authenticateToken, requireAdvertiser, upload.single('media'), postController.createPost);

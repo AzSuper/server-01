@@ -23,7 +23,10 @@ router.put('/profile', authenticateToken, userController.updateUserProfile);
 // Admin Routes
 router.get('/:id', authenticateToken, userController.getUserById);
 
-// New Admin Routes for User Management
+// Dashboard Routes (Public - for dashboard display)
+router.get('/', userController.getAllUsersPublic);
+
+// Admin Routes for User Management
 router.get('/admin/users', authenticateToken, userController.getAllUsers);
 router.get('/admin/advertisers', authenticateToken, userController.getAllAdvertisers);
 router.get('/admin/users/combined', authenticateToken, userController.getAllUsersCombined);

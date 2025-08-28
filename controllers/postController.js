@@ -579,3 +579,170 @@ exports.checkLikeStatus = async (req, res) => {
         res.status(500).json({ error: 'Failed to check like status' });
     }
 };
+
+// Admin: Get all posts with detailed information
+exports.getAllPostsAdmin = async (req, res) => {
+    try {
+        const { page = 1, limit = 20, search = '', type, category_id, verified } = req.query;
+        
+        const pageNum = parseInt(page) || 1;
+        const limitNum = Math.min(parseInt(limit) || 20, 100);
+        const offset = (pageNum - 1) * limitNum;
+        
+        let whereClause = 'WHERE 1=1';
+        const params = [];
+        let paramCount = 0;
+
+        if (search) {
+            paramCount++;
+            whereClause += ` AND (p.title ILIKE $${paramCount} OR p.description ILIKE $${paramCount})`;
+            params.push(`%${search}%`);
+        }
+
+        if (type && ['reel', 'post'].includes(type)) {
+            paramCount++;
+            whereClause += ` AND p.type = $${paramCount}`;
+            params.push(type);
+        }
+
+        if (category_id) {
+            paramCount++;
+            whereClause += ` AND p.category_id = $${paramCount}`;
+            params.push(category_id);
+        }
+
+        if (verified !== undefined) {
+            paramCount++;
+            whereClause += ` AND a.is_verified = $${paramCount}`;
+            params.push(verified === 'true');
+        }
+
+        const query = `
+            SELECT 
+                p.*,
+                c.name as category_name,
+                a.store_name as advertiser_name,
+                a.is_verified as advertiser_verified,
+                COALESCE(pl.likes_count, 0) as likes_count,
+                COALESCE(r.reservations_count, 0) as reservations_count,
+                COALESCE(cm.comments_count, 0) as comments_count
+            FROM posts p
+            LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN advertisers a ON p.advertiser_id = a.id
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) as likes_count 
+                FROM post_likes 
+                GROUP BY post_id
+            ) pl ON p.id = pl.post_id
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) as reservations_count 
+                FROM reservations 
+                WHERE status = 'active'
+                GROUP BY post_id
+            ) r ON p.id = r.post_id
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) as comments_count 
+                FROM comments 
+                GROUP BY post_id
+            ) cm ON p.id = cm.post_id
+            ${whereClause}
+            ORDER BY p.created_at DESC
+            LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
+        `;
+
+        params.push(limitNum, offset);
+        const result = await pool.query(query, params);
+
+        // Get total count
+        const countQuery = `
+            SELECT COUNT(*) as total
+            FROM posts p
+            LEFT JOIN advertisers a ON p.advertiser_id = a.id
+            ${whereClause}
+        `;
+        const countResult = await pool.query(countQuery, params.slice(0, -2));
+        const total = parseInt(countResult.rows[0].total);
+
+        res.json({
+            success: true,
+            message: 'Posts retrieved successfully',
+            data: result.rows,
+            pagination: {
+                current_page: pageNum,
+                total_pages: Math.ceil(total / limitNum),
+                total_posts: total,
+                posts_per_page: limitNum
+            }
+        });
+    } catch (error) {
+        console.error('Error getting all posts admin:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to retrieve posts' 
+        });
+    }
+};
+
+// Admin: Get post statistics
+exports.getPostStats = async (req, res) => {
+    try {
+        const statsQuery = `
+            SELECT 
+                COUNT(*) as total_posts,
+                COUNT(CASE WHEN type = 'reel' THEN 1 END) as total_reels,
+                COUNT(CASE WHEN type = 'post' THEN 1 END) as total_product_posts,
+                COUNT(CASE WHEN with_reservation = true THEN 1 END) as posts_with_reservations,
+                COUNT(CASE WHEN created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as posts_last_7_days,
+                COUNT(CASE WHEN created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as posts_last_30_days,
+                AVG(CASE WHEN price IS NOT NULL THEN price END) as average_price,
+                SUM(CASE WHEN likes_count > 0 THEN likes_count ELSE 0 END) as total_likes
+            FROM posts
+        `;
+
+        const statsResult = await pool.query(statsQuery);
+        const stats = statsResult.rows[0];
+
+        // Get top categories
+        const categoryQuery = `
+            SELECT 
+                c.name as category_name,
+                COUNT(p.id) as post_count
+            FROM categories c
+            LEFT JOIN posts p ON c.id = p.category_id
+            GROUP BY c.id, c.name
+            ORDER BY post_count DESC
+            LIMIT 5
+        `;
+        const categoryResult = await pool.query(categoryQuery);
+
+        // Get top advertisers by posts
+        const advertiserQuery = `
+            SELECT 
+                a.store_name,
+                COUNT(p.id) as post_count,
+                a.is_verified
+            FROM advertisers a
+            LEFT JOIN posts p ON a.id = p.advertiser_id
+            GROUP BY a.id, a.store_name, a.is_verified
+            ORDER BY post_count DESC
+            LIMIT 10
+        `;
+        const advertiserResult = await pool.query(advertiserQuery);
+
+        res.json({
+            success: true,
+            message: 'Post statistics retrieved successfully',
+            data: {
+                overview: stats,
+                top_categories: categoryResult.rows,
+                top_advertisers: advertiserResult.rows
+            }
+        });
+    } catch (error) {
+        console.error('Error getting post statistics:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to retrieve post statistics' 
+        });
+    }
+};

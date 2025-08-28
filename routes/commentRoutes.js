@@ -11,6 +11,10 @@ router.get('/post/:post_id', CommentController.getPostComments);
 router.post('/', authenticateToken, CommentController.createComment);
 router.delete('/:comment_id', authenticateToken, CommentController.deleteComment);
 
+// Admin routes for dashboard
+router.get('/admin/all', authenticateToken, CommentController.getAllCommentsAdmin);
+router.get('/admin/stats', authenticateToken, CommentController.getCommentStats);
+
 module.exports = router;
 
 

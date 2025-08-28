@@ -25,4 +25,8 @@ router.get('/stats/:advertiser_id', ReservationController.getAdvertiserReservati
 // Cancel a reservation
 router.delete('/:reservation_id', ReservationController.cancelReservation);
 
+// Admin routes for dashboard
+router.get('/admin/all', ReservationController.getAllReservationsAdmin);
+router.get('/admin/stats', ReservationController.getReservationStats);
+
 module.exports = router;
