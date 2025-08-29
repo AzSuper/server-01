@@ -18,9 +18,9 @@ router.get('/admin/all', postController.getAllPostsAdmin);
 router.get('/admin/stats', postController.getPostStats);
 
 // Protected routes (authentication required)
-// Only advertisers can create reels
-// Support both 'media' and 'video' field names for backward compatibility
-router.post('/', authenticateToken, requireAdvertiser, upload.any(), postController.createPost);
+// Only advertisers can create posts
+// Support media file uploads for product posts
+router.post('/', authenticateToken, requireAdvertiser, upload.single('media'), postController.createPost);
 router.post('/save', authenticateToken, postController.savePost);
 router.get('/saved/:client_id', authenticateToken, requireSelfOrAdmin('client_id'), postController.getSavedPosts);
 

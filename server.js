@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 
 const userRoutes = require('./routes/userRoutes');
 const postRoutes = require('./routes/postRoutes');
+const reelRoutes = require('./routes/reelRoutes');
 const reservationRoutes = require('./routes/reservationRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -79,6 +80,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/reels', reelRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
