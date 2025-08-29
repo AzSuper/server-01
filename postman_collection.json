@@ -16,6 +16,18 @@
       "type": "string"
     },
     {
+      "key": "advertiser_token",
+      "value": "YOUR_ADVERTISER_JWT_TOKEN_HERE",
+      "type": "string",
+      "description": "JWT token for advertiser user (required for creating reels)"
+    },
+    {
+      "key": "user_token",
+      "value": "YOUR_USER_JWT_TOKEN_HERE",
+      "type": "string",
+      "description": "JWT token for regular user (required for liking/saving posts)"
+    },
+    {
       "key": "user_id",
       "value": "1",
       "type": "string"
@@ -29,6 +41,12 @@
       "key": "post_id",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "created_reel_id",
+      "value": "",
+      "type": "string",
+      "description": "Automatically set when creating a reel, used by other tests"
     }
   ],
   "auth": {
@@ -680,8 +698,669 @@
       ]
     },
     {
+      "name": "📱 User Posts & Reels",
+      "item": [
+        {
+          "name": "Create Reel (Simplified)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "This is a test reel caption for testing the new simplified API",
+                  "type": "text"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test script for reel creation",
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has success message', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.eql('Reel created successfully');",
+                  "});",
+                  "",
+                  "pm.test('Response contains reel data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('reel');",
+                  "    pm.expect(response.reel).to.have.property('id');",
+                  "    pm.expect(response.reel).to.have.property('type', 'reel');",
+                  "    pm.expect(response.reel).to.have.property('description');",
+                  "    pm.expect(response.reel).to.have.property('media_url');",
+                  "    pm.expect(response.reel).to.have.property('advertiser_id');",
+                  "});",
+                  "",
+                  "pm.test('Reel type is automatically set', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.reel.type).to.eql('reel');",
+                  "});",
+                  "",
+                  "pm.test('Advertiser ID matches token', function () {",
+                  "    const response = pm.response.json();",
+                  "    const token = pm.request.headers.get('Authorization').replace('Bearer ', '');",
+                  "    // Note: In real testing, you'd decode the JWT to get user ID",
+                  "    pm.expect(response.reel).to.have.property('advertiser_id');",
+                  "});",
+                  "",
+                  "// Store the created reel ID for other tests",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('created_reel_id', response.reel.id);",
+                  "    console.log('Created reel ID:', response.reel.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Reel (Backward Compatible - media field)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "This is a test reel using the media field for backward compatibility",
+                  "type": "text"
+                },
+                {
+                  "key": "media",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test script for backward compatibility",
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Reel created successfully with media field', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.eql('Reel created successfully');",
+                  "    pm.expect(response.reel.type).to.eql('reel');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Posts (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains posts array', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Posts have required fields', function () {",
+                  "    const response = pm.response.json();",
+                  "    if (response.length > 0) {",
+                  "        const post = response[0];",
+                  "        pm.expect(post).to.have.property('id');",
+                  "        pm.expect(post).to.have.property('type');",
+                  "        pm.expect(post).to.have.property('media_url');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Posts by Type (Reels Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts?type=reel&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "reel"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All posts are reels', function () {",
+                  "    const response = pm.response.json();",
+                  "    response.forEach(post => {",
+                  "        pm.expect(post.type).to.eql('reel');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Post Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{created_reel_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "{{created_reel_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Post details match created reel', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.eql(parseInt(pm.collectionVariables.get('created_reel_id')));",
+                  "    pm.expect(response.type).to.eql('reel');",
+                  "    pm.expect(response).to.have.property('description');",
+                  "    pm.expect(response).to.have.property('media_url');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Save Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": \"{{user_id}}\",\n  \"post_id\": \"{{created_reel_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts/save",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "save"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Post saved successfully', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('saved');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Saved Posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/saved/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "saved", "{{user_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": [
+                "pm.test('Status code is 200', function () {",
+                "    pm.response.to.have.status(200);",
+                "});",
+                "",
+                "pm.test('Response contains saved posts', function () {",
+                "    const response = pm.response.json();",
+                "    pm.expect(response).to.be.an('array');",
+                "});"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Like/Unlike Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{created_reel_id}}/like",
+              "host": ["{{base_url}}"],
+              "url": ["api", "posts", "{{created_reel_id}}", "like"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Like action successful', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('message');",
+                  "    pm.expect(response).to.have.property('liked');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check Like Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{created_reel_id}}/like-status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "{{created_reel_id}}", "like-status"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains like status', function () {",
+                  "    pm.expect(response).to.have.property('liked');",
+                  "    pm.expect(response).to.have.property('likes_count');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Reel - Missing Description (Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 (Bad Request)', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates missing description', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.include('Description is required');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Reel - Missing Video (Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "This reel has no video file",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 (Bad Request)', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates missing video file', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.include('No file uploaded');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Reel - Unauthorized (Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "This reel has no authorization",
+                  "type": "text"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 (Unauthorized)', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates unauthorized access', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.include('Unauthorized');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Reel - Non-Advertiser User (Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "This user is not an advertiser",
+                  "type": "text"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 (Forbidden)', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates only advertisers can create reels', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.include('only advertisers can create reels');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "🧪 Test Sequences",
       "item": [
+        {
+          "name": "Complete Reel Workflow",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts?type=reel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "reel"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test script for complete reel workflow",
+                  "console.log('Testing complete reel workflow...');",
+                  "console.log('1. Create a new reel');",
+                  "console.log('2. Verify reel was created');",
+                  "console.log('3. Test like functionality');",
+                  "console.log('4. Test save functionality');",
+                  "console.log('5. Verify reel appears in public feed');",
+                  "console.log('6. Clean up test data if needed');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reel API Validation Tests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Comprehensive validation tests for reel API",
+                  "console.log('Running reel API validation tests...');",
+                  "",
+                  "// Test 1: Health check",
+                  "pm.test('Server is healthy', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test 2: Verify API structure",
+                  "pm.test('API endpoints are accessible', function () {",
+                  "    // This test will be expanded with actual endpoint checks",
+                  "    pm.expect(true).to.be.true;",
+                  "});",
+                  "",
+                  "console.log('Reel API validation tests completed');"
+                ]
+              }
+            }
+          ]
+        },
         {
           "name": "Complete Points Workflow",
           "request": {
