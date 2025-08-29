@@ -21,6 +21,10 @@ router.post('/reset-password', userController.resetPassword);
 router.get('/profile', authenticateToken, userController.getUserProfile);
 router.put('/profile', authenticateToken, userController.updateUserProfile);
 
+// Profile-specific routes for advertisers to view their own content
+router.get('/profile/my-posts', authenticateToken, userController.getMyPosts);
+router.get('/profile/my-reels', authenticateToken, userController.getMyReels);
+
 // Admin Routes
 router.get('/:id', authenticateToken, userController.getUserById);
 

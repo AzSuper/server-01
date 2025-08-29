@@ -460,6 +460,118 @@ exports.updateUserProfile = async (req, res) => {
     }
 };
 
+// Get advertiser's own posts for profile
+exports.getMyPosts = async (req, res) => {
+    const userId = req.user.id;
+    const userType = req.user.type;
+    const { page = 1, limit = 10 } = req.query;
+
+    // Only advertisers can access this endpoint
+    if (userType !== 'advertiser') {
+        return res.status(403).json({ 
+            error: 'Forbidden: Only advertisers can view their own posts' 
+        });
+    }
+
+    try {
+        const offset = (page - 1) * limit;
+
+        // Get posts with category and reservation count
+        const result = await pool.query(`
+            SELECT 
+                p.*,
+                c.name as category_name,
+                COUNT(r.id) as reservation_count
+            FROM posts p
+            LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN reservations r ON p.id = r.post_id
+            WHERE p.advertiser_id = $1
+            GROUP BY p.id, c.name
+            ORDER BY p.created_at DESC
+            LIMIT $2 OFFSET $3
+        `, [userId, limit, offset]);
+
+        // Get total count
+        const countResult = await pool.query(
+            'SELECT COUNT(*) as total FROM posts WHERE advertiser_id = $1',
+            [userId]
+        );
+
+        const total = parseInt(countResult.rows[0].total);
+        const totalPages = Math.ceil(total / limit);
+
+        res.json({
+            posts: result.rows,
+            pagination: {
+                current_page: parseInt(page),
+                total_pages: totalPages,
+                total_posts: total,
+                posts_per_page: parseInt(limit)
+            }
+        });
+    } catch (error) {
+        logger.error('Error retrieving advertiser posts:', error);
+        res.status(500).json({ error: 'Failed to retrieve posts' });
+    }
+};
+
+// Get advertiser's own reels for profile
+exports.getMyReels = async (req, res) => {
+    const userId = req.user.id;
+    const userType = req.user.type;
+    const { page = 1, limit = 10 } = req.query;
+
+    // Only advertisers can access this endpoint
+    if (userType !== 'advertiser') {
+        return res.status(403).json({ 
+            error: 'Forbidden: Only advertisers can view their own reels' 
+        });
+    }
+
+    try {
+        const offset = (page - 1) * limit;
+
+        // Get reels with pagination
+        const reelsResult = await pool.query(`
+            SELECT 
+                r.*,
+                u.full_name as advertiser_name
+            FROM reels r
+            JOIN users u ON r.advertiser_id = u.id
+            WHERE r.advertiser_id = $1
+            ORDER BY r.created_at DESC
+            LIMIT $2 OFFSET $3
+        `, [userId, limit, offset]);
+
+        // Get total count for pagination
+        const countResult = await pool.query(
+            'SELECT COUNT(*) as total FROM reels WHERE advertiser_id = $1',
+            [userId]
+        );
+
+        const totalReels = parseInt(countResult.rows[0].total);
+        const totalPages = Math.ceil(totalReels / limit);
+
+        res.json({
+            reels: reelsResult.rows,
+            pagination: {
+                current_page: parseInt(page),
+                total_pages: totalPages,
+                total_reels: totalReels,
+                limit: parseInt(limit),
+                has_next: page < totalPages,
+                has_prev: page > 1
+            }
+        });
+    } catch (error) {
+        logger.error('Error getting advertiser reels:', error);
+        res.status(500).json({ 
+            error: 'Failed to retrieve reels',
+            details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+};
+
 // Get user by ID (admin only)
 exports.getUserById = async (req, res) => {
     const { id } = req.params;
