@@ -184,9 +184,10 @@ exports.adminAdjustPoints = async (req, res) => {
 
             if (userPointsResult.rows.length === 0) {
                 // Create new user points record
+                const initialBalance = Math.max(0, pointsChange);
                 await client.query(
                     'INSERT INTO user_points (user_id, user_type, points_balance, total_earned, total_spent) VALUES ($1, $2, $3, $4, $5)',
-                    [userId, userType, Math.max(0, pointsChange), Math.max(0, pointsChange), 0]
+                    [userId, userType, initialBalance, Math.max(0, pointsChange), Math.max(0, -pointsChange)]
                 );
             } else {
                 // Update existing user points
@@ -246,7 +247,11 @@ exports.adminAdjustPoints = async (req, res) => {
 
     } catch (error) {
         logger.error('Admin adjust points error:', error);
-        res.status(500).json({ error: 'Failed to adjust points' });
+        res.status(500).json({ 
+            error: 'Failed to adjust points',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
 
