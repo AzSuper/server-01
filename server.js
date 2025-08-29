@@ -15,6 +15,7 @@ const commentRoutes = require('./routes/commentRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const pointsRoutes = require('./routes/pointsRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 const { pool, testConnection } = require('./config/db');
 const { validateEnvironment } = require('./config/env');
 const { globalErrorHandler } = require('./utils/errorHandler');
@@ -86,6 +87,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/points', pointsRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // 404 handler
 app.all('*', (req, res, next) => {
