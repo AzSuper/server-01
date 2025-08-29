@@ -1,9 +1,10 @@
 const express = require('express');
+const multer = require('multer');
 const postController = require('../controllers/postController');
 const { authenticateToken, requireAdvertiser, requireSelfOrAdmin } = require('../middleware/auth');
-const { singleFile } = require('../middleware/upload');
 
 const router = express.Router();
+const upload = multer({ dest: 'uploads/' });
 
 // Public routes (no authentication required)
 router.get('/', postController.getPosts);
@@ -19,7 +20,7 @@ router.get('/admin/stats', postController.getPostStats);
 // Protected routes (authentication required)
 // Only advertisers can create reels
 // Support both 'media' and 'video' field names for backward compatibility
-router.post('/', authenticateToken, requireAdvertiser, singleFile, postController.createPost);
+router.post('/', authenticateToken, requireAdvertiser, upload.any(), postController.createPost);
 router.post('/save', authenticateToken, postController.savePost);
 router.get('/saved/:client_id', authenticateToken, requireSelfOrAdmin('client_id'), postController.getSavedPosts);
 

@@ -27,25 +27,49 @@ exports.createPost = async (req, res) => {
     // For reels, automatically set type and extract advertiser_id from token
     const type = 'reel';
     const advertiser_id = req.user.id;
+    
+    // Debug logging for request
+    logger.info('=== Request Debug Info ===');
+    logger.info('Request body:', req.body);
+    logger.info('Request files:', req.files);
+    logger.info('Request file:', req.file);
+    logger.info('Content-Type:', req.get('Content-Type'));
+    logger.info('=== End Request Debug ===');
 
     try {
 
         // Validation passed
 
         // Check if a file was uploaded (support both 'media' and 'video' field names for backward compatibility)
-        if (!req.file) {
-            logger.error('No file uploaded in request');
-            return res.status(400).json({ error: 'No file uploaded' });
+        let uploadedFile = null;
+        
+        // Check for files in req.files (from upload.any)
+        if (req.files && req.files.length > 0) {
+            uploadedFile = req.files[0];
+            logger.info(`File found in req.files: ${uploadedFile.originalname}, fieldname: ${uploadedFile.fieldname}`);
         }
         
-        // Handle file from flexible upload middleware
-        const uploadedFile = Array.isArray(req.file) ? req.file[0] : req.file;
+        // Fallback to req.file (from upload.single)
+        if (!uploadedFile && req.file) {
+            uploadedFile = req.file;
+            logger.info(`File found in req.file: ${uploadedFile.originalname}`);
+        }
+        
         if (!uploadedFile) {
-            logger.error('No file found in uploaded files');
+            logger.error('No file uploaded in request');
+            logger.error('req.files:', req.files);
+            logger.error('req.file:', req.file);
             return res.status(400).json({ error: 'No file uploaded' });
         }
         
         logger.info(`File uploaded: ${uploadedFile.originalname}, size: ${uploadedFile.size}, path: ${uploadedFile.path}`);
+        
+        // Debug logging for file upload
+        logger.info('=== File Upload Debug Info ===');
+        logger.info('req.files:', JSON.stringify(req.files, null, 2));
+        logger.info('req.file:', JSON.stringify(req.file, null, 2));
+        logger.info('uploadedFile:', JSON.stringify(uploadedFile, null, 2));
+        logger.info('=== End Debug Info ===');
 
                 // Validate required fields for reels
         if (!description) {
