@@ -13,7 +13,7 @@ exports.createReel = async (req, res) => {
         logger.info('=== Reel Creation Request Debug ===');
         logger.info('Request body:', req.body);
         logger.info('Request files:', req.files);
-        logger.info('Content-Type:', req.get('Content-Type');
+        logger.info('Content-Type:', req.get('Content-Type'));
         logger.info('Advertiser ID from token:', advertiser_id);
         logger.info('=== End Request Debug ===');
 

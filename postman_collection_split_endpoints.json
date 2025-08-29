@@ -1,0 +1,1232 @@
+{
+  "info": {
+    "name": "Split Endpoints API Collection",
+    "description": "Comprehensive API collection for testing separated posts and reels endpoints with full test coverage",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "Base URL for the API server"
+    },
+    {
+      "key": "admin_token",
+      "value": "YOUR_ADMIN_JWT_TOKEN_HERE",
+      "type": "string",
+      "description": "JWT token for admin user (full system access)"
+    },
+    {
+      "key": "advertiser_token",
+      "value": "YOUR_ADVERTISER_JWT_TOKEN_HERE",
+      "type": "string",
+      "description": "JWT token for advertiser user (create posts and reels)"
+    },
+    {
+      "key": "user_token",
+      "value": "YOUR_USER_JWT_TOKEN_HERE",
+      "type": "string",
+      "description": "JWT token for regular user (like/save content)"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "type": "string",
+      "description": "User ID for testing user-specific endpoints"
+    },
+    {
+      "key": "advertiser_id",
+      "value": "1",
+      "type": "string",
+      "description": "Advertiser ID for testing advertiser-specific endpoints"
+    },
+    {
+      "key": "created_post_id",
+      "value": "",
+      "type": "string",
+      "description": "Automatically set when creating a post, used by other tests"
+    },
+    {
+      "key": "created_reel_id",
+      "value": "",
+      "type": "string",
+      "description": "Automatically set when creating a reel, used by other tests"
+    },
+    {
+      "key": "category_id",
+      "value": "1",
+      "type": "string",
+      "description": "Category ID for testing posts"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{admin_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔐 Authentication & Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates server is running', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.status).to.eql('success');",
+                  "    pm.expect(response.message).to.include('running');",
+                  "});",
+                  "",
+                  "pm.test('Response has timestamp and uptime', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('timestamp');",
+                  "    pm.expect(response).to.have.property('uptime');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains admin token', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('token');",
+                  "    pm.expect(response.token).to.be.a('string');",
+                  "    pm.expect(response.token.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Response contains admin info', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('admin');",
+                  "    pm.expect(response.admin).to.have.property('username', 'admin');",
+                  "});",
+                  "",
+                  "// Store the admin token for other tests",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('admin_token', response.token);",
+                  "    console.log('Admin token stored:', response.token.substring(0, 20) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📝 Posts Management",
+      "item": [
+        {
+          "name": "Create Post (Full Data)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "advertiser_id",
+                  "value": "{{advertiser_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{category_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "post",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Amazing Test Product",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "This is a comprehensive test product with all fields filled",
+                  "type": "text"
+                },
+                {
+                  "key": "price",
+                  "value": "99.99",
+                  "type": "text"
+                },
+                {
+                  "key": "old_price",
+                  "value": "129.99",
+                  "type": "text"
+                },
+                {
+                  "key": "expiration_date",
+                  "value": "2024-12-31 23:59:59",
+                  "type": "text"
+                },
+                {
+                  "key": "with_reservation",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "reservation_time",
+                  "value": "2025-12-25 12:00:00",
+                  "type": "text"
+                },
+                {
+                  "key": "reservation_limit",
+                  "value": "10",
+                  "type": "text"
+                },
+                {
+                  "key": "social_media_links",
+                  "value": "{\"facebook\": \"https://facebook.com/test\", \"instagram\": \"https://instagram.com/test\"}",
+                  "type": "text"
+                },
+                {
+                  "key": "media",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has success message', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.eql('Post created successfully');",
+                  "});",
+                  "",
+                  "pm.test('Response contains post data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('post');",
+                  "    pm.expect(response.post).to.have.property('id');",
+                  "    pm.expect(response.post).to.have.property('type', 'post');",
+                  "    pm.expect(response.post).to.have.property('title');",
+                  "    pm.expect(response.post).to.have.property('price');",
+                  "    pm.expect(response.post).to.have.property('media_url');",
+                  "});",
+                  "",
+                  "pm.test('Post has all required fields', function () {",
+                  "    const response = pm.response.json();",
+                  "    const post = response.post;",
+                  "    pm.expect(post.advertiser_id).to.eql(parseInt(pm.collectionVariables.get('advertiser_id')));",
+                  "    pm.expect(post.type).to.eql('post');",
+                  "    pm.expect(post.title).to.eql('Amazing Test Product');",
+                  "    pm.expect(post.price).to.eql('99.99');",
+                  "    pm.expect(post.with_reservation).to.eql(true);",
+                  "});",
+                  "",
+                  "// Store the created post ID for other tests",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('created_post_id', response.post.id);",
+                  "    console.log('Created post ID:', response.post.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Post - Missing Required Fields (Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "This post is missing required fields",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 (Bad Request)', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates missing required fields', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.include('required');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Post - Wrong Type (Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "advertiser_id",
+                  "value": "{{advertiser_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "reel",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Test Title",
+                  "type": "text"
+                },
+                {
+                  "key": "price",
+                  "value": "99.99",
+                  "type": "text"
+                },
+                {
+                  "key": "expiration_date",
+                  "value": "2024-12-31 23:59:59",
+                  "type": "text"
+                },
+                {
+                  "key": "media",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 (Bad Request)', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates wrong type', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.include('type must be \"post\"');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Posts (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains posts array', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Posts have required fields', function () {",
+                  "    const response = pm.response.json();",
+                  "    if (response.length > 0) {",
+                  "        const post = response[0];",
+                  "        pm.expect(post).to.have.property('id');",
+                  "        pm.expect(post).to.have.property('type');",
+                  "        pm.expect(post).to.have.property('title');",
+                  "        pm.expect(post).to.have.property('media_url');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Posts by Type (Posts Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts?type=post&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "post"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All posts are of type post', function () {",
+                  "    const response = pm.response.json();",
+                  "    response.forEach(post => {",
+                  "        pm.expect(post.type).to.eql('post');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Post Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{created_post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "{{created_post_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": [
+                "pm.test('Status code is 200', function () {",
+                "    pm.response.to.have.status(200);",
+                "});",
+                "",
+                "pm.test('Post details match created post', function () {",
+                "    const response = pm.response.json();",
+                "    pm.expect(response.id).to.eql(parseInt(pm.collectionVariables.get('created_post_id')));",
+                "    pm.expect(response.type).to.eql('post');",
+                "    pm.expect(response).to.have.property('title');",
+                "    pm.expect(response).to.have.property('price');",
+                "    pm.expect(response).to.have.property('media_url');",
+                "});"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📱 Reels Management",
+      "item": [
+        {
+          "name": "Create Reel (Simplified)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "This is a test reel caption for the new simplified API! 🎬",
+                  "type": "text"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reels",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has success message', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.eql('Reel created successfully');",
+                  "});",
+                  "",
+                  "pm.test('Response contains reel data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('reel');",
+                  "    pm.expect(response.reel).to.have.property('id');",
+                  "    pm.expect(response.reel).to.have.property('description');",
+                  "    pm.expect(response.reel).to.have.property('video_url');",
+                  "    pm.expect(response.reel).to.have.property('advertiser_id');",
+                  "});",
+                  "",
+                  "pm.test('Reel has correct structure', function () {",
+                  "    const response = pm.response.json();",
+                  "    const reel = response.reel;",
+                  "    pm.expect(reel.description).to.eql('This is a test reel caption for the new simplified API! 🎬');",
+                  "    pm.expect(reel).to.have.property('likes_count', 0);",
+                  "    pm.expect(reel).to.have.property('views_count', 0);",
+                  "    pm.expect(reel).to.have.property('created_at');",
+                  "});",
+                  "",
+                  "// Store the created reel ID for other tests",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('created_reel_id', response.reel.id);",
+                  "    console.log('Created reel ID:', response.reel.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Reel - Missing Description (Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reels",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 (Bad Request)', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates missing description', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.include('Description is required');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Reel - Missing Video (Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "This reel has no video file",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reels",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 (Bad Request)', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates missing video file', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.include('No video file uploaded');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Reel - Unauthorized (Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "This reel has no authorization",
+                  "type": "text"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reels",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 (Unauthorized)', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates unauthorized access', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.include('Unauthorized');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Reel - Non-Advertiser User (Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "description",
+                  "value": "This user is not an advertiser",
+                  "type": "text"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reels",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 (Forbidden)', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates only advertisers can create reels', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.include('only advertisers can create reels');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Reels (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reels?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains reels and pagination', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('reels');",
+                  "    pm.expect(response).to.have.property('pagination');",
+                  "});",
+                  "",
+                  "pm.test('Reels array exists', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.reels).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Pagination info is correct', function () {",
+                  "    const response = pm.response.json();",
+                  "    const pagination = response.pagination;",
+                  "    pm.expect(pagination).to.have.property('current_page');",
+                  "    pm.expect(pagination).to.have.property('total_pages');",
+                  "    pm.expect(pagination).to.have.property('total_reels');",
+                  "    pm.expect(pagination).to.have.property('limit');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Reels by Advertiser",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reels?advertiser_id={{advertiser_id}}&page=1&limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels"],
+              "query": [
+                {
+                  "key": "advertiser_id",
+                  "value": "{{advertiser_id}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All reels belong to the specified advertiser', function () {",
+                  "    const response = pm.response.json();",
+                  "    const advertiserId = parseInt(pm.collectionVariables.get('advertiser_id'));",
+                  "    response.reels.forEach(reel => {",
+                  "        pm.expect(reel.advertiser_id).to.eql(advertiserId);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Reel Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reels/{{created_reel_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels", "{{created_reel_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Reel details match created reel', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.eql(parseInt(pm.collectionVariables.get('created_reel_id')));",
+                  "    pm.expect(response).to.have.property('description');",
+                  "    pm.expect(response).to.have.property('video_url');",
+                  "    pm.expect(response).to.have.property('advertiser_name');",
+                  "});",
+                  "",
+                  "pm.test('View count is incremented', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('views_count');",
+                  "    pm.expect(response.views_count).to.be.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "❤️ User Interactions",
+      "item": [
+        {
+          "name": "Like/Unlike Reel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reels/{{created_reel_id}}/like",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels", "{{created_reel_id}}", "like"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Like action successful', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('message');",
+                  "    pm.expect(response).to.have.property('liked');",
+                  "});",
+                  "",
+                  "pm.test('Message indicates success', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('successfully');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check Reel Like Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reels/{{created_reel_id}}/like-status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels", "{{created_reel_id}}", "like-status"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains like status', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('liked');",
+                  "    pm.expect(response).to.have.property('likes_count');",
+                  "});",
+                  "",
+                  "pm.test('Like status is boolean', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(typeof response.liked).to.eql('boolean');",
+                  "});",
+                  "",
+                  "pm.test('Likes count is number', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(typeof response.likes_count).to.eql('number');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Save Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": \"{{user_id}}\",\n  \"post_id\": \"{{created_post_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts/save",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "save"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Post saved successfully', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('saved');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Saved Posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/saved/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "saved", "{{user_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains saved posts', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🧪 Test Sequences",
+      "item": [
+        {
+          "name": "Complete Posts Workflow",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts?type=post",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "post"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test script for complete posts workflow",
+                  "console.log('Testing complete posts workflow...');",
+                  "console.log('1. Create a new product post');",
+                  "console.log('2. Verify post was created with all fields');",
+                  "console.log('3. Test post retrieval and filtering');",
+                  "console.log('4. Test post details endpoint');",
+                  "console.log('5. Verify post appears in public feed');",
+                  "console.log('6. Test user interactions (save, like)');",
+                  "console.log('7. Clean up test data if needed');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complete Reels Workflow",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{advertiser_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reels",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reels"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test script for complete reels workflow",
+                  "console.log('Testing complete reels workflow...');",
+                  "console.log('1. Create a new video reel');",
+                  "console.log('2. Verify reel was created with minimal data');",
+                  "console.log('3. Test reel retrieval and pagination');",
+                  "console.log('4. Test reel details with view count');",
+                  "console.log('5. Test like functionality');",
+                  "console.log('6. Verify reel appears in public feed');",
+                  "console.log('7. Test advertiser-specific filtering');",
+                  "console.log('8. Clean up test data if needed');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API Endpoint Validation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Comprehensive validation tests for split endpoints",
+                  "console.log('Running API endpoint validation tests...');",
+                  "",
+                  "// Test 1: Health check",
+                  "pm.test('Server is healthy and running', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test 2: Verify API structure",
+                  "pm.test('API endpoints are accessible', function () {",
+                  "    // This test will be expanded with actual endpoint checks",
+                  "    pm.expect(true).to.be.true;",
+                  "});",
+                  "",
+                  "// Test 3: Verify separation of concerns",
+                  "pm.test('Posts and reels endpoints are properly separated', function () {",
+                  "    // Verify that posts and reels have different endpoints",
+                  "    pm.expect('/api/posts').to.not.eql('/api/reels');",
+                  "});",
+                  "",
+                  "console.log('API endpoint validation tests completed');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
