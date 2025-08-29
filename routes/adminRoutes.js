@@ -34,15 +34,16 @@ router.put('/categories/:id', authenticateToken, requireAdmin, adminController.u
 router.delete('/categories/:id', authenticateToken, requireAdmin, adminController.deleteCategory);
 
 // Points System Management
-router.get('/points', authenticateToken, requireAdmin, pointsController.getAllUserPoints);
-router.get('/points/stats', authenticateToken, requireAdmin, pointsController.getPointsStats);
-router.put('/points/:id/adjust', authenticateToken, requireAdmin, pointsController.adminAdjustPoints);
-router.get('/points/withdrawal-requests', authenticateToken, requireAdmin, pointsController.getWithdrawalRequests);
-router.post('/points/withdrawal-requests/:id/approve', authenticateToken, requireAdmin, pointsController.approveWithdrawal);
-router.post('/points/withdrawal-requests/:id/reject', authenticateToken, requireAdmin, pointsController.rejectWithdrawal);
+// Note: Points routes are now handled by dedicated pointsRoutes.js
+// router.get('/points', authenticateToken, requireAdmin, pointsController.getAllUserPoints);
+// router.get('/points/stats', authenticateToken, requireAdmin, pointsController.getPointsStats);
+// router.put('/points/:id/adjust', authenticateToken, requireAdmin, pointsController.adminAdjustPoints);
+// router.get('/points/withdrawal-requests', authenticateToken, requireAdmin, pointsController.getWithdrawalRequests);
+// router.post('/points/withdrawal-requests/:id/approve', authenticateToken, requireAdmin, pointsController.approveWithdrawal);
+// router.post('/points/withdrawal-requests/:id/reject', authenticateToken, requireAdmin, pointsController.rejectWithdrawal);
 
 // Public points endpoints (for users)
-router.post('/points/request', pointsController.requestPoints);
-router.get('/points/user/:userId/:userType', pointsController.getUserPoints);
+// router.post('/points/request', pointsController.requestPoints);
+// router.get('/points/user/:userId/:userType', pointsController.getUserPoints);
 
 module.exports = router;
