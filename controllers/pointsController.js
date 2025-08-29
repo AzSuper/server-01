@@ -143,8 +143,11 @@ exports.getPointsStats = async (req, res) => {
 // Admin adjust user points
 exports.adminAdjustPoints = async (req, res) => {
     try {
-        const { userId, userType, pointsChange, reason, transactionType } = req.body;
-        const { id } = req.params;
+        const { userType, pointsChange, reason, transactionType } = req.body;
+        const { id } = req.params; // Get user ID from URL path
+        
+        // Use the ID from URL path as userId
+        const userId = parseInt(id);
 
         if (!userId || !userType || !pointsChange || !reason) {
             return res.status(400).json({

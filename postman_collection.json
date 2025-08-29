@@ -1,977 +1,721 @@
 {
-	"info": {
-		"_postman_id": "new-auth-flow-collection",
-		"name": "Flutter Backend API - New Authentication Flow",
-		"description": "Complete API collection for the new authentication system with separate user and advertiser flows, OTP verification, and comprehensive endpoint coverage.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "12345678"
-	},
-	"item": [
-		{
-			"name": "🔐 Authentication",
-			"item": [
-				{
-					"name": "Step 1: Send OTP - User (with all data)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "X-User-Type",
-								"value": "user"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"fullName\": \"John Doe\",\n  \"phone\": \"+1234567890\",\n  \"password\": \"securepassword123\",\n  \"profileImage\": \"https://example.com/profile.jpg\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/users/send-otp",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "send-otp"]
-						},
-						"description": "Step 1: User enters all data and requests OTP for phone verification. This is the first step in the user registration process."
-					},
-					"response": []
-				},
-				{
-					"name": "Step 1: Send OTP - Advertiser (with all data)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "X-User-Type",
-								"value": "advertiser"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"fullName\": \"Jane Smith\",\n  \"phone\": \"+1234567891\",\n  \"password\": \"securepassword123\",\n  \"storeName\": \"Smith's Electronics\",\n  \"storeImage\": \"https://example.com/store.jpg\",\n  \"description\": \"Best electronics store in town\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/users/send-otp",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "send-otp"]
-						},
-						"description": "Step 1: Advertiser enters all data and requests OTP for phone verification. This is the first step in the advertiser registration process."
-					},
-					"response": []
-				},
-				{
-					"name": "Step 2: Verify OTP - User",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "X-User-Type",
-								"value": "user"
-							},
-							{
-								"key": "X-Phone",
-								"value": "{{phone_number}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"otp\": \"123456\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/users/verify-otp",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "verify-otp"]
-						},
-						"description": "Step 2: Verify OTP and create user account. Only requires OTP in body. Phone number is automatically set from Step 1 response via {{phone_number}} variable."
-					},
-					"response": []
-				},
-				{
-					"name": "Step 2: Verify OTP - Advertiser",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "X-Phone",
-								"value": "{{phone_number}}"
-							},
-							{
-								"key": "X-User-Type",
-								"value": "advertiser"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"otp\": \"123456\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/users/verify-otp",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "verify-otp"]
-						},
-						"description": "Step 2: Verify OTP and create advertiser account. Only requires OTP in body. Phone number is automatically set from Step 1 response via {{phone_number}} variable."
-					},
-					"response": []
-				},
-				{
-					"name": "Login",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+1234567890\",\n  \"password\": \"securepassword123\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/users/login",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "login"]
-						},
-						"description": "Login with phone number and password. Works for both users and advertisers."
-					},
-					"response": []
-				}
-			],
-			"description": "Complete authentication flow: Step 1: User enters all data and requests OTP, Step 2: User verifies OTP with all data to create account and get token."
-		},
-		{
-			"name": "🔑 Password Reset",
-			"item": [
-				{
-					"name": "Request Password Reset - User",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+1234567890\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/users/forgot-password/user",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "forgot-password", "user"]
-						},
-						"description": "Request password reset OTP for a user account."
-					},
-					"response": []
-				},
-				{
-					"name": "Request Password Reset - Advertiser",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+1234567891\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/users/forgot-password/advertiser",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "forgot-password", "advertiser"]
-						},
-						"description": "Request password reset OTP for an advertiser account."
-					},
-					"response": []
-				},
-				{
-					"name": "Reset Password - User",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "X-User-Type",
-								"value": "user"
-							},
-							{
-								"key": "X-Phone",
-								"value": "{{phone_number}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/users/reset-password",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "reset-password"]
-						},
-						"description": "Reset user password using OTP verification."
-					},
-					"response": []
-				},
-				{
-					"name": "Reset Password - Advertiser",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "X-User-Type",
-								"value": "advertiser"
-							},
-							{
-								"key": "X-Phone",
-								"value": "{{phone_number}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/users/reset-password",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "reset-password"]
-						},
-						"description": "Reset advertiser password using OTP verification."
-					},
-					"response": []
-				}
-			],
-			"description": "Password reset functionality for both user types using OTP verification."
-		},
-		{
-			"name": "👤 User Management",
-			"item": [
-				{
-					"name": "Get User Profile",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/users/profile",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "profile"]
-						},
-						"description": "Get the authenticated user's profile information."
-					},
-					"response": []
-				},
-				{
-					"name": "Update User Profile",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"displayName\": \"John Doe\",\n  \"bio\": \"Tech enthusiast and developer\",\n  \"website\": \"https://johndoe.com\",\n  \"location\": \"New York\",\n  \"socialLinks\": {\n    \"instagram\": \"@johndoe\",\n    \"twitter\": \"@johndoe\"\n  },\n  \"metadata\": {\n    \"preferences\": {\n      \"theme\": \"dark\",\n      \"notifications\": true\n    }\n  }\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/users/profile",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "profile"]
-						},
-						"description": "Update the authenticated user's profile information."
-					},
-					"response": []
-				},
-				{
-					"name": "Get User by ID (Admin)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/users/1?userType=user",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "1"],
-							"query": [
-								{
-									"key": "userType",
-									"value": "user"
-								}
-							]
-						},
-						"description": "Get user information by ID. Requires authentication and userType query parameter."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Advertiser by ID (Admin)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/users/1?userType=advertiser",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "1"],
-							"query": [
-								{
-									"key": "userType",
-									"value": "advertiser"
-								}
-							]
-						},
-						"description": "Get advertiser information by ID. Requires authentication and userType query parameter."
-					},
-					"response": []
-				}
-			],
-			"description": "User profile management and information retrieval endpoints."
-		},
-		{
-			"name": "📝 Posts",
-			"item": [
-				{
-					"name": "Get All Posts",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/posts",
-							"host": ["{{base_url}}"],
-							"path": ["api", "posts"]
-						},
-						"description": "Retrieve all posts with optional filtering and pagination."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Post by ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/posts/1",
-							"host": ["{{base_url}}"],
-							"path": ["api", "posts", "1"]
-						},
-						"description": "Retrieve a specific post by its ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Post (Advertiser Only)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "advertiser_id",
-									"value": "1",
-									"type": "text"
-								},
-								{
-									"key": "category_id",
-									"value": "1",
-									"type": "text"
-								},
-								{
-									"key": "type",
-									"value": "post",
-									"type": "text"
-								},
-								{
-									"key": "title",
-									"value": "Amazing Product",
-									"type": "text"
-								},
-								{
-									"key": "description",
-									"value": "This is an amazing product description",
-									"type": "text"
-								},
-								{
-									"key": "price",
-									"value": "99.99",
-									"type": "text"
-								},
-								{
-									"key": "old_price",
-									"value": "129.99",
-									"type": "text"
-								},
-								{
-									"key": "expiration_date",
-									"value": "2024-12-31T23:59:59Z",
-									"type": "text"
-								},
-								{
-									"key": "with_reservation",
-									"value": "true",
-									"type": "text"
-								},
-								{
-									"key": "reservation_time",
-									"value": "2024-12-25T12:00:00Z",
-									"type": "text"
-								},
-								{
-									"key": "reservation_limit",
-									"value": "10",
-									"type": "text"
-								},
-								{
-									"key": "social_media_links",
-									"value": "{\"instagram\": \"https://instagram.com/post\", \"facebook\": \"https://facebook.com/post\"}",
-									"type": "text"
-								},
-								{
-									"key": "media",
-									"type": "file",
-									"src": []
-								}
-							]
-						},
-						"url": {
-							"raw": "{{base_url}}/api/posts",
-							"host": ["{{base_url}}"],
-							"path": ["api", "posts"]
-						},
-						"description": "Create a new post. Only advertisers can create posts. Supports both images and videos."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Reel (Advertiser Only)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "advertiser_id",
-									"value": "1",
-									"type": "text"
-								},
-								{
-									"key": "category_id",
-									"value": "1",
-									"type": "text"
-								},
-								{
-									"key": "type",
-									"value": "reel",
-									"type": "text"
-								},
-								{
-									"key": "title",
-									"value": "Amazing Product Video",
-									"type": "text"
-								},
-								{
-									"key": "description",
-									"value": "This is an amazing product video description",
-									"type": "text"
-								},
-								{
-									"key": "media",
-									"type": "file",
-									"src": []
-								}
-							]
-						},
-						"url": {
-							"raw": "{{base_url}}/api/posts",
-							"host": ["{{base_url}}"],
-							"path": ["api", "posts"]
-						},
-						"description": "Create a new reel (video post). Only advertisers can create reels."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Post",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"title\": \"Updated Product Title\",\n  \"description\": \"Updated product description\",\n  \"price\": 89.99,\n  \"expiration_date\": \"2024-12-31T23:59:59Z\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/posts/1",
-							"host": ["{{base_url}}"],
-							"path": ["api", "posts", "1"]
-						},
-						"description": "Update an existing post. Only the post owner can update it."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Post",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/posts/1",
-							"host": ["{{base_url}}"],
-							"path": ["api", "posts", "1"]
-						},
-						"description": "Delete a post. Only the post owner can delete it."
-					},
-					"response": []
-				}
-			],
-			"description": "Post management endpoints for creating, reading, updating, and deleting posts and reels."
-		},
-		{
-			"name": "📅 Reservations",
-			"item": [
-				{
-					"name": "Get All Reservations",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/reservations",
-							"host": ["{{base_url}}"],
-							"path": ["api", "reservations"]
-						},
-						"description": "Retrieve all reservations. Users can see their own reservations, advertisers can see reservations for their posts."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Reservation by ID",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/reservations/1",
-							"host": ["{{base_url}}"],
-							"path": ["api", "reservations", "1"]
-						},
-						"description": "Retrieve a specific reservation by its ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Reservation",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"client_id\": 1,\n  \"client_type\": \"user\",\n  \"post_id\": 1\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/reservations",
-							"host": ["{{base_url}}"],
-							"path": ["api", "reservations"]
-						},
-						"description": "Create a new reservation for a post. Both users and advertisers can make reservations."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Reservation",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"status\": \"cancelled\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/reservations/1",
-							"host": ["{{base_url}}"],
-							"path": ["api", "reservations", "1"]
-						},
-						"description": "Update a reservation status. Users can cancel their reservations, advertisers can update status."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Reservation",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/reservations/1",
-							"host": ["{{base_url}}"],
-							"path": ["api", "reservations", "1"]
-						},
-						"description": "Delete a reservation. Only the reservation owner can delete it."
-					},
-					"response": []
-				}
-			],
-			"description": "Reservation management endpoints for booking and managing post reservations."
-		},
-		{
-			"name": "💬 Comments",
-			"item": [
-				{
-					"name": "Get Comments for Post",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/comments?post_id=1",
-							"host": ["{{base_url}}"],
-							"path": ["api", "comments"],
-							"query": [
-								{
-									"key": "post_id",
-									"value": "1"
-								}
-							]
-						},
-						"description": "Retrieve all comments for a specific post."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Comment",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"post_id\": 1,\n  \"user_id\": 1,\n  \"user_type\": \"user\",\n  \"content\": \"Great post! This looks amazing.\",\n  \"parent_comment_id\": null\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/comments",
-							"host": ["{{base_url}}"],
-							"path": ["api", "comments"]
-						},
-						"description": "Create a new comment on a post. Both users and advertisers can comment."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Comment",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"content\": \"Updated comment content\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/comments/1",
-							"host": ["{{base_url}}"],
-							"path": ["api", "comments", "1"]
-						},
-						"description": "Update a comment. Only the comment author can update it."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Comment",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/comments/1",
-							"host": ["{{base_url}}"],
-							"path": ["api", "comments", "1"]
-						},
-						"description": "Delete a comment. Only the comment author can delete it."
-					},
-					"response": []
-				}
-			],
-			"description": "Comment management endpoints for posting and managing comments on posts."
-		},
-		{
-			"name": "🔧 Utility",
-			"item": [
-				{
-					"name": "Health Check",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/health",
-							"host": ["{{base_url}}"],
-							"path": ["health"]
-						},
-						"description": "Check if the server is running and healthy."
-					},
-					"response": []
-				},
-				{
-					"name": "Cleanup Expired OTPs",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/users/cleanup-otps",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "cleanup-otps"]
-						},
-						"description": "Clean up expired and used OTP codes from the database."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Latest OTP (Development)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "X-User-Type",
-								"value": "user"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/users/otp/+1234567890/verification",
-							"host": ["{{base_url}}"],
-							"path": ["api", "users", "otp", "+1234567890", "verification"]
-						},
-						"description": "Get the latest OTP for testing purposes. Only available in development mode."
-					},
-					"response": []
-				}
-			],
-			"description": "Utility endpoints for system health checks and development tools."
-		}
-	],
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					"// Pre-request script to set up common variables",
-					"if (pm.environment.get('base_url') === '') {",
-					"    pm.environment.set('base_url', 'http://localhost:5000');",
-					"}",
-					"",
-					"// Log the request being made",
-					"console.log('Making request to: ' + pm.request.url.toString());"
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					"// Test script to handle common response scenarios",
-					"pm.test('Status code is valid', function () {",
-					"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 401, 403, 404, 500]);",
-					"});",
-					"",
-					"pm.test('Response has required structure', function () {",
-					"    if (pm.response.code === 200 || pm.response.code === 201) {",
-					"        pm.expect(pm.response.json()).to.have.property('message');",
-					"}",
-					"});",
-					"",
-					"// Auto-save auth token for login responses",
-					"if (pm.response.code === 200 && pm.request.url.path.includes('/login')) {",
-					"    const responseJson = pm.response.json();",
-					"    if (responseJson.token) {",
-					"        pm.environment.set('auth_token', responseJson.token);",
-					"        console.log('Auth token saved automatically');",
-					"}",
-					"}",
-					"",
-					"// Auto-save OTP for testing",
-					"if (pm.response.code === 200 && pm.request.url.path.includes('/send-otp')) {",
-					"    const responseJson = pm.response.json();",
-					"    if (responseJson.otp) {",
-					"        pm.environment.set('last_otp', responseJson.otp);",
-					"        console.log('OTP saved: ' + responseJson.otp);",
-					"}",
-					"}",
-					"",
-					"// Auto-save phone number from send-otp and forgot-password responses",
-					"if (pm.response.code === 200 && (pm.request.url.path.includes('/send-otp') || pm.request.url.path.includes('/forgot-password'))) {",
-					"    const responseJson = pm.response.json();",
-					"    if (responseJson.phone) {",
-					"        pm.environment.set('phone_number', responseJson.phone);",
-					"        console.log('Phone number saved: ' + responseJson.phone);",
-					"}",
-					"}",
-					"",
-					"// Auto-save admin token from admin login",
-					"if (pm.response.code === 200 && pm.request.url.path.includes('/admin/login')) {",
-					"    const responseJson = pm.response.json();",
-					"    if (responseJson.token) {",
-					"        pm.environment.set('admin_token', responseJson.token);",
-					"        console.log('Admin token saved automatically');",
-					"}",
-					"}"
-				]
-			}
-		}
-	],
-	"variable": [
-		{
-			"key": "base_url",
-			"value": "http://localhost:5000",
-			"type": "string"
-		},
-		{
-			"key": "auth_token",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "last_otp",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "user_id",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "advertiser_id",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "post_id",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "phone_number",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "admin_token",
-			"value": "",
-			"type": "string"
-		}
-	]
+  "info": {
+    "name": "Admin Dashboard API Collection",
+    "description": "Complete API collection for testing all endpoints including authentication, users, posts, points, and admin functions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://server-final-2olj.onrender.com",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsInBlcm1pc3Npb25zIjp7InBvc3RzIjp0cnVlLCJ1c2VycyI6dHJ1ZSwiY2F0ZWdvcmllcyI6dHJ1ZSwiYWR2ZXJ0aXNlcnMiOnRydWUsInJlc2VydmF0aW9ucyI6dHJ1ZX0sImlhdCI6MTc1NjQ4NTcwNSwiZXhwIjo0OTEyMjQ1NzA1fQ.UXNey2FkXYgLEKmMm7WxGDb7bA4hNzKJfi22Op6lvfM",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "advertiser_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "post_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{admin_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "login"]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Users Management",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏪 Advertisers Management",
+      "item": [
+        {
+          "name": "Get All Advertisers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/advertisers?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "advertisers"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Advertiser",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/advertisers/{{advertiser_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "advertisers", "{{advertiser_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Posts Management",
+      "item": [
+        {
+          "name": "Get All Posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/posts?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "posts"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Posts Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/posts/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "posts", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/posts/{{post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "posts", "{{post_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💬 Comments Management",
+      "item": [
+        {
+          "name": "Get All Comments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/comments?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "comments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Comments Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/comments/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "comments", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/comments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "comments", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Reservations Management",
+      "item": [
+        {
+          "name": "Get All Reservations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/reservations?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "reservations"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Reservations Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/reservations/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "reservations", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Delete Reservation",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/reservations/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "reservations", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏷️ Categories Management",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Category\",\n  \"description\": \"A test category for testing purposes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Category\",\n  \"description\": \"Updated description for the category\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/categories/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "categories", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/categories/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "categories", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💰 Points System",
+      "item": [
+        {
+          "name": "Get All User Points",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/points?page=1&limit=20&search=&userType=all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "points"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "userType",
+                  "value": "all"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Points Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/points/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "points", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Add Points to User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": {{user_id}},\n  \"userType\": \"user\",\n  \"pointsChange\": 1000,\n  \"reason\": \"Adding initial points for testing\",\n  \"transactionType\": \"admin_adjustment\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/points/{{user_id}}/adjust",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "points", "{{user_id}}", "adjust"]
+            }
+          }
+        },
+        {
+          "name": "User Request Points Withdrawal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": {{user_id}},\n  \"userType\": \"user\",\n  \"pointsAmount\": 500,\n  \"withdrawalMethod\": \"bank_transfer\",\n  \"accountDetails\": \"Bank: Test Bank, Account: 1234-5678, Routing: 021000021\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/points/request",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "points", "request"]
+            }
+          }
+        },
+        {
+          "name": "Get Withdrawal Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/points/withdrawal-requests?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "points", "withdrawal-requests"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Withdrawal Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminNotes\": \"Approved and processed bank transfer\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/points/withdrawal-requests/1/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "points", "withdrawal-requests", "1", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Withdrawal Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminNotes\": \"Rejected due to insufficient documentation\",\n  \"reason\": \"Missing required bank documents\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/points/withdrawal-requests/1/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "points", "withdrawal-requests", "1", "reject"]
+            }
+          }
+        },
+        {
+          "name": "Get User Points Balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/points/user/{{user_id}}/user",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "points", "user", "{{user_id}}", "user"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧪 Test Sequences",
+      "item": [
+        {
+          "name": "Complete Points Workflow",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/points",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "points"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test script for complete points workflow",
+                  "console.log('Testing complete points workflow...');",
+                  "console.log('1. Check current user points');",
+                  "console.log('2. Add points if needed');",
+                  "console.log('3. Request withdrawal');",
+                  "console.log('4. Approve withdrawal');",
+                  "console.log('5. Verify points deducted');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
