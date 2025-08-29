@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
+const pointsController = require('../controllers/pointsController');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 // Admin authentication - NO MIDDLEWARE APPLIED
@@ -31,5 +32,17 @@ router.get('/categories', authenticateToken, requireAdmin, adminController.getAl
 router.post('/categories', authenticateToken, requireAdmin, adminController.createCategory);
 router.put('/categories/:id', authenticateToken, requireAdmin, adminController.updateCategory);
 router.delete('/categories/:id', authenticateToken, requireAdmin, adminController.deleteCategory);
+
+// Points System Management
+router.get('/points', authenticateToken, requireAdmin, pointsController.getAllUserPoints);
+router.get('/points/stats', authenticateToken, requireAdmin, pointsController.getPointsStats);
+router.put('/points/:id/adjust', authenticateToken, requireAdmin, pointsController.adminAdjustPoints);
+router.get('/points/withdrawal-requests', authenticateToken, requireAdmin, pointsController.getWithdrawalRequests);
+router.post('/points/withdrawal-requests/:id/approve', authenticateToken, requireAdmin, pointsController.approveWithdrawal);
+router.post('/points/withdrawal-requests/:id/reject', authenticateToken, requireAdmin, pointsController.rejectWithdrawal);
+
+// Public points endpoints (for users)
+router.post('/points/request', pointsController.requestPoints);
+router.get('/points/user/:userId/:userType', pointsController.getUserPoints);
 
 module.exports = router;
