@@ -124,6 +124,8 @@ uploads/
 *.sqlite
 *.sqlite3
 *.db
+supabase/
+dashboard/
 
 # Backup files
 *.bak

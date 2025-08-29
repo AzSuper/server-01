@@ -489,46 +489,96 @@ exports.updateCategory = async (req, res) => {
 // Get dashboard statistics
 exports.getDashboardStats = async (req, res) => {
     try {
-        // Get counts for different entities
-        const userCountQuery = 'SELECT COUNT(*) FROM users';
-        const advertiserCountQuery = 'SELECT COUNT(*) FROM advertisers';
-        const postCountQuery = 'SELECT COUNT(*) FROM posts';
-        const reservationCountQuery = 'SELECT COUNT(*) FROM reservations';
-        const categoryCountQuery = 'SELECT COUNT(*) FROM categories';
+        // Get basic counts
+        const usersCount = await pool.query('SELECT COUNT(*) FROM users');
+        const advertisersCount = await pool.query('SELECT COUNT(*) FROM advertisers');
+        const postsCount = await pool.query('SELECT COUNT(*) FROM posts');
+        const reservationsCount = await pool.query('SELECT COUNT(*) FROM reservations');
+        const commentsCount = await pool.query('SELECT COUNT(*) FROM comments');
+        const categoriesCount = await pool.query('SELECT COUNT(*) FROM categories');
 
-        const [userCount, advertiserCount, postCount, reservationCount, categoryCount] = await Promise.all([
-            pool.query(userCountQuery),
-            pool.query(advertiserCountQuery),
-            pool.query(postCountQuery),
-            pool.query(reservationCountQuery),
-            pool.query(categoryCountQuery)
-        ]);
+        // Get points system stats
+        const pointsStats = await pool.query(`
+            SELECT 
+                COUNT(*) as total_users_with_points,
+                SUM(points_balance) as total_points_in_circulation,
+                COUNT(CASE WHEN points_balance > 0 THEN 1 END) as active_users
+            FROM user_points
+        `);
 
-        // Get recent activity (last 7 days)
-        const recentActivityQuery = `
-            SELECT 'post' as type, title as name, created_at, 'New post created' as description
-            FROM posts 
-            WHERE created_at >= NOW() - INTERVAL '7 days'
-            UNION ALL
-            SELECT 'reservation' as type, 'Reservation' as name, reserved_at, 'New reservation made' as description
-            FROM reservations 
-            WHERE reserved_at >= NOW() - INTERVAL '7 days'
-            ORDER BY created_at DESC
-            LIMIT 10
-        `;
-        const recentActivity = await pool.query(recentActivityQuery);
+        // Get pending withdrawal requests
+        const withdrawalRequests = await pool.query(`
+            SELECT COUNT(*) as pending_withdrawals
+            FROM point_withdrawals 
+            WHERE status = 'pending'
+        `);
+
+        // Get monthly stats
+        const currentMonth = new Date();
+        const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+        
+        const newUsersThisMonth = await pool.query(
+            'SELECT COUNT(*) FROM users WHERE created_at >= $1',
+            [firstDayOfMonth]
+        );
+        
+        const postsThisMonth = await pool.query(
+            'SELECT COUNT(*) FROM posts WHERE created_at >= $1',
+            [firstDayOfMonth]
+        );
+        
+        const reservationsThisMonth = await pool.query(
+            'SELECT COUNT(*) FROM reservations WHERE reserved_at >= $1',
+            [firstDayOfMonth]
+        );
+
+        // Get recent activity
+        const recentPosts = await pool.query(`
+            SELECT p.title, p.created_at, a.full_name as advertiser_name
+            FROM posts p
+            JOIN advertisers a ON p.advertiser_id = a.id
+            ORDER BY p.created_at DESC
+            LIMIT 5
+        `);
+
+        const recentReservations = await pool.query(`
+            SELECT 
+                r.reserved_at,
+                p.title as post_title,
+                CASE 
+                    WHEN r.client_type = 'user' THEN u.full_name
+                    WHEN r.client_type = 'advertiser' THEN a.full_name
+                END as client_name
+            FROM reservations r
+            JOIN posts p ON r.post_id = p.id
+            LEFT JOIN users u ON r.client_id = u.id AND r.client_type = 'user'
+            LEFT JOIN advertisers a ON r.client_id = a.id AND r.client_type = 'advertiser'
+            ORDER BY r.reserved_at DESC
+            LIMIT 5
+        `);
 
         res.json({
             message: 'Dashboard statistics retrieved successfully',
             data: {
-                counts: {
-                    users: parseInt(userCount.rows[0].count),
-                    advertisers: parseInt(advertiserCount.rows[0].count),
-                    posts: parseInt(postCount.rows[0].count),
-                    reservations: parseInt(reservationCount.rows[0].count),
-                    categories: parseInt(categoryCount.rows[0].count)
+                totalUsers: parseInt(usersCount.rows[0].count),
+                totalAdvertisers: parseInt(advertisersCount.rows[0].count),
+                totalPosts: parseInt(postsCount.rows[0].count),
+                totalReservations: parseInt(reservationsCount.rows[0].count),
+                totalComments: parseInt(commentsCount.rows[0].count),
+                totalCategories: parseInt(categoriesCount.rows[0].count),
+                activeUsers: parseInt(pointsStats.rows[0].active_users || 0),
+                newUsersThisMonth: parseInt(newUsersThisMonth.rows[0].count),
+                postsThisMonth: parseInt(postsThisMonth.rows[0].count),
+                reservationsThisMonth: parseInt(reservationsThisMonth.rows[0].count),
+                pointsSystem: {
+                    totalUsersWithPoints: parseInt(pointsStats.rows[0].total_users_with_points || 0),
+                    totalPointsInCirculation: parseInt(pointsStats.rows[0].total_points_in_circulation || 0),
+                    pendingWithdrawals: parseInt(withdrawalRequests.rows[0].pending_withdrawals || 0)
                 },
-                recentActivity: recentActivity.rows
+                recentActivity: {
+                    posts: recentPosts.rows,
+                    reservations: recentReservations.rows
+                }
             }
         });
 
