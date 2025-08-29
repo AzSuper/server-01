@@ -22,30 +22,22 @@ exports.validateReservationRequest = (req, res, next) => {
     next();
 };
 
-// Validate post creation request
-exports.validatePostRequest = (req, res, next) => {
-    const { advertiser_id, type, title } = req.body;
+// Validate reel creation request
+exports.validateReelRequest = (req, res, next) => {
+    const { description } = req.body;
     
-    // Check required fields
-    if (!advertiser_id || !type || !title) {
+    // Check required fields for reels
+    if (!description) {
         return res.status(400).json({
             error: 'Missing required fields',
-            required_fields: ['advertiser_id', 'type', 'title']
-        });
-    }
-
-    // Validate post type
-    if (!['reel', 'post'].includes(type)) {
-        return res.status(400).json({
-            error: 'Invalid post type',
-            valid_types: ['reel', 'post']
+            required_fields: ['description']
         });
     }
 
     // Validate file upload
     if (!req.file) {
         return res.status(400).json({
-            error: 'Media file is required'
+            error: 'Video file is required'
         });
     }
 

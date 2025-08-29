@@ -21,104 +21,55 @@ exports.getPostEngagement = async (req, res) => {
 // Create a new post
 exports.createPost = async (req, res) => {
     const { 
-        advertiser_id, 
-        category_id, 
-        type, 
-        title, 
-        description, 
-        price, 
-        old_price, 
-        expiration_date,
-        with_reservation, 
-        reservation_time, 
-        reservation_limit, 
-        social_media_links 
+        description 
     } = req.body;
+    
+    // For reels, automatically set type and extract advertiser_id from token
+    const type = 'reel';
+    const advertiser_id = req.user.id;
 
     try {
 
         // Validation passed
 
-        // Check if a file was uploaded
+        // Check if a file was uploaded (support both 'media' and 'video' field names for backward compatibility)
         if (!req.file) {
             logger.error('No file uploaded in request');
             return res.status(400).json({ error: 'No file uploaded' });
         }
         
-        logger.info(`File uploaded: ${req.file.originalname}, size: ${req.file.size}, path: ${req.file.path}`);
+        // Handle file from flexible upload middleware
+        const uploadedFile = Array.isArray(req.file) ? req.file[0] : req.file;
+        if (!uploadedFile) {
+            logger.error('No file found in uploaded files');
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        
+        logger.info(`File uploaded: ${uploadedFile.originalname}, size: ${uploadedFile.size}, path: ${uploadedFile.path}`);
 
-        // Validate required fields
-        if (!advertiser_id || !type || !title) {
+                // Validate required fields for reels
+        if (!description) {
             return res.status(400).json({ 
-                error: 'advertiser_id, type, and title are required' 
+                error: 'Description is required for reel posts' 
             });
         }
 
-        // Validate post type
-        if (!['reel', 'post'].includes(type)) {
-            return res.status(400).json({ 
-                error: 'type must be either "reel" or "post"' 
-            });
-        }
-
-        // Validate post type specific requirements
-        if (type === 'reel') {
-            // Reel: Video media + Description
-            if (!description) {
-                return res.status(400).json({ 
-                    error: 'Description is required for reel posts' 
-                });
-            }
-        } else if (type === 'post') {
-            // Post: Image media + title + expiration date + product price + old price (optional) + post type
-            if (!title) {
-                return res.status(400).json({ 
-                    error: 'Title is required for post type' 
-                });
-            }
-            if (!expiration_date) {
-                return res.status(400).json({ 
-                    error: 'Expiration date is required for post type' 
-                });
-            }
-            if (price === undefined || price === null) {
-                return res.status(400).json({ 
-                    error: 'Product price is required for post type' 
-                });
-            }
-        }
-
-        // Validate advertiser exists
-        logger.info(`Validating advertiser with ID: ${advertiser_id}`);
-        const advertiserResult = await pool.query(
-            'SELECT id FROM advertisers WHERE id = $1', 
-            [advertiser_id]
-        );
-
-        if (advertiserResult.rows.length === 0) {
-            logger.error(`Advertiser not found with ID: ${advertiser_id}`);
-            return res.status(404).json({ 
-                error: 'Advertiser not found' 
-            });
-        }
-
-        // Ensure caller is the same advertiser
+        // Validate user is an advertiser
         const caller = req.user;
         if (!caller) {
             logger.error('Unauthorized access attempt - no user in request');
             return res.status(401).json({ error: 'Unauthorized' });
         }
         
-        // Check if caller is an advertiser and matches the advertiser_id
-        if (caller.type !== 'advertiser' || parseInt(advertiser_id) !== caller.id) {
-            logger.error(`Forbidden: User ${caller.id} (type: ${caller.type}) trying to create post for advertiser ${advertiser_id}`);
-            return res.status(403).json({ error: 'Forbidden: only advertisers can create posts for themselves' });
+        if (caller.type !== 'advertiser') {
+            logger.error(`Forbidden: User ${caller.id} (type: ${caller.type}) trying to create reel`);
+            return res.status(403).json({ error: 'Forbidden: only advertisers can create reels' });
         }
         
-        logger.info(`Authorization passed for advertiser ${caller.id} creating post`);
+        logger.info(`Authorization passed for advertiser ${caller.id} creating reel`);
 
         // Upload media to Cloudinary
-        logger.info(`Starting Cloudinary upload for file: ${req.file.path}`);
+        logger.info(`Starting Cloudinary upload for file: ${uploadedFile.path}`);
         
         // Validate Cloudinary configuration
         if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
@@ -126,78 +77,58 @@ exports.createPost = async (req, res) => {
             return res.status(500).json({ error: 'Media upload service not configured' });
         }
         
-        const mediaUpload = await cloudinary.uploader.upload(req.file.path, {
+        const mediaUpload = await cloudinary.uploader.upload(uploadedFile.path, {
             resource_type: 'auto', // Automatically determine resource type (image/video)
         });
         logger.info(`Cloudinary upload successful: ${mediaUpload.secure_url}`);
 
-        // Parse reservation data
-        const withReservation = with_reservation === 'true' || with_reservation === true;
-        const parsedReservationTime = reservation_time ? new Date(reservation_time) : null;
-        const parsedReservationLimit = reservation_limit ? parseInt(reservation_limit) : null;
-        const parsedExpirationDate = expiration_date ? new Date(expiration_date) : null;
 
-        // Validate reservation data if reservation is enabled
-        if (withReservation) {
-            if (parsedReservationTime && parsedReservationTime <= new Date()) {
-                return res.status(400).json({ 
-                    error: 'Reservation time must be in the future' 
-                });
-            }
-            if (parsedReservationLimit && parsedReservationLimit <= 0) {
-                return res.status(400).json({ 
-                    error: 'Reservation limit must be greater than 0' 
-                });
-            }
-        }
 
-        // Create the post in the database
-        logger.info(`Creating post in database with advertiser_id: ${advertiser_id}, type: ${type}, title: ${title}`);
+        // Create the reel in the database
+        logger.info(`Creating reel in database with advertiser_id: ${advertiser_id}, type: ${type}`);
         
         let result;
         try {
             result = await pool.query(
-                'INSERT INTO posts (advertiser_id, category_id, type, title, description, price, old_price, expiration_date, with_reservation, reservation_time, reservation_limit, social_media_links, media_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
-                [advertiser_id, category_id, type, title, description, price, old_price, parsedExpirationDate, withReservation, parsedReservationTime, parsedReservationLimit, social_media_links || null, mediaUpload.secure_url]
+                'INSERT INTO posts (advertiser_id, type, description, media_url) VALUES ($1, $2, $3, $4) RETURNING *',
+                [advertiser_id, type, description, mediaUpload.secure_url]
             );
-            logger.info(`Post created in database with ID: ${result.rows[0].id}`);
+            logger.info(`Reel created in database with ID: ${result.rows[0].id}`);
         } catch (dbError) {
-            logger.error(`Database error creating post: ${dbError.message}`);
+            logger.error(`Database error creating reel: ${dbError.message}`);
             logger.error(`SQL State: ${dbError.code}, Detail: ${dbError.detail}`);
             throw new Error(`Database operation failed: ${dbError.message}`);
         }
 
         // Clean up temporary file
-        fs.unlink(req.file.path, (err) => {
+        fs.unlink(uploadedFile.path, (err) => {
             if (err) {
                 console.error('Error deleting temporary file:', err);
             }
         });
 
-        // Get the complete post with category and advertiser info
-        logger.info(`Fetching complete post details for ID: ${result.rows[0].id}`);
-        const completePostResult = await pool.query(`
+        // Get the complete reel with advertiser info
+        logger.info(`Fetching complete reel details for ID: ${result.rows[0].id}`);
+        const completeReelResult = await pool.query(`
             SELECT 
                 p.*,
-                c.name as category_name,
                 u.full_name as advertiser_name
             FROM posts p
-            LEFT JOIN categories c ON p.category_id = c.id
             JOIN users u ON p.advertiser_id = u.id
             WHERE p.id = $1
         `, [result.rows[0].id]);
-        logger.info(`Complete post details fetched successfully`);
+        logger.info(`Complete reel details fetched successfully`);
 
         res.status(201).json({
-            message: 'Post created successfully',
-            post: completePostResult.rows[0]
+            message: 'Reel created successfully',
+            reel: completeReelResult.rows[0]
         });
     } catch (error) {
-        console.error('Error creating post:', error);
-        logger.error(`Post creation failed: ${error.message}`);
+        console.error('Error creating reel:', error);
+        logger.error(`Reel creation failed: ${error.message}`);
         logger.error(`Stack trace: ${error.stack}`);
         res.status(500).json({ 
-            error: 'Post creation failed',
+            error: 'Reel creation failed',
             details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });
     }

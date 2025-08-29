@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS point_transactions (
         'earned_login', 'earned_reservation', 'earned_referral', 'earned_daily_bonus',
         'earned_content_creation', 'earned_engagement', 'earned_purchase',
         'spent_ad_boost', 'spent_premium_feature', 'spent_gift', 'spent_withdrawal',
-        'admin_adjustment', 'system_bonus', 'penalty'
+        'admin_adjustment', 'system_bonus', 'penalty', 'correction'
     )),
     points_change INTEGER NOT NULL, -- positive for earned, negative for spent
     description TEXT,
