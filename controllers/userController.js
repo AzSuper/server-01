@@ -476,6 +476,9 @@ exports.getMyPosts = async (req, res) => {
     try {
         const offset = (page - 1) * limit;
 
+        // Debug: Log the userId and type to help troubleshoot
+        logger.info(`Getting posts for advertiser ID: ${userId}, type: ${typeof userId}`);
+
         // Get posts with category and reservation count
         const result = await pool.query(`
             SELECT 
@@ -489,16 +492,19 @@ exports.getMyPosts = async (req, res) => {
             GROUP BY p.id, c.name
             ORDER BY p.created_at DESC
             LIMIT $2 OFFSET $3
-        `, [userId, limit, offset]);
+        `, [parseInt(userId), limit, offset]);
 
         // Get total count
         const countResult = await pool.query(
             'SELECT COUNT(*) as total FROM posts WHERE advertiser_id = $1',
-            [userId]
+            [parseInt(userId)]
         );
 
         const total = parseInt(countResult.rows[0].total);
         const totalPages = Math.ceil(total / limit);
+
+        // Debug: Log the results
+        logger.info(`Found ${result.rows.length} posts out of ${total} total`);
 
         res.json({
             posts: result.rows,
@@ -531,26 +537,30 @@ exports.getMyReels = async (req, res) => {
     try {
         const offset = (page - 1) * limit;
 
-        // Get reels with pagination
+        // Debug: Log the userId and type to help troubleshoot
+        logger.info(`Getting reels for advertiser ID: ${userId}, type: ${typeof userId}`);
+
+        // Get reels with pagination - simplified query without JOIN to avoid issues
         const reelsResult = await pool.query(`
             SELECT 
-                r.*,
-                u.full_name as advertiser_name
+                r.*
             FROM reels r
-            JOIN users u ON r.advertiser_id = u.id
             WHERE r.advertiser_id = $1
             ORDER BY r.created_at DESC
             LIMIT $2 OFFSET $3
-        `, [userId, limit, offset]);
+        `, [parseInt(userId), limit, offset]);
 
         // Get total count for pagination
         const countResult = await pool.query(
             'SELECT COUNT(*) as total FROM reels WHERE advertiser_id = $1',
-            [userId]
+            [parseInt(userId)]
         );
 
         const totalReels = parseInt(countResult.rows[0].total);
         const totalPages = Math.ceil(totalReels / limit);
+
+        // Debug: Log the results
+        logger.info(`Found ${reelsResult.rows.length} reels out of ${totalReels} total`);
 
         res.json({
             reels: reelsResult.rows,
