@@ -126,7 +126,8 @@ uploads/
 *.db
 supabase/
 dashboard/
-
+user-app/
+database/
 # Backup files
 *.bak
 *.backup

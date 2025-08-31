@@ -1,0 +1,1628 @@
+{
+  "info": {
+    "name": "Flutter Backend API - Flow Based Collection",
+    "description": "Complete API collection organized by user flows covering all endpoints and scenarios",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://server-final-2olj.onrender.com",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string",
+      "description": "Will be set after admin login"
+    },
+    {
+      "key": "user_token",
+      "value": "",
+      "type": "string",
+      "description": "Will be set after user login"
+    },
+    {
+      "key": "advertiser_token",
+      "value": "",
+      "type": "string",
+      "description": "Will be set after advertiser login"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string",
+      "description": "Will be set after user creation"
+    },
+    {
+      "key": "advertiser_id",
+      "value": "",
+      "type": "string",
+      "description": "Will be set after advertiser creation"
+    },
+    {
+      "key": "post_id",
+      "value": "",
+      "type": "string",
+      "description": "Will be set after post creation"
+    },
+    {
+      "key": "reel_id",
+      "value": "",
+      "type": "string",
+      "description": "Will be set after reel creation"
+    },
+    {
+      "key": "reservation_id",
+      "value": "",
+      "type": "string",
+      "description": "Will be set after reservation creation"
+    },
+    {
+      "key": "category_id",
+      "value": "",
+      "type": "string",
+      "description": "Will be set after category creation"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{admin_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔐 1. System Setup & Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('admin_token', response.token);",
+                  "    console.log('Admin token set:', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 2. User Registration & Authentication Flow",
+      "item": [
+        {
+          "name": "2.1 Regular User Registration",
+          "item": [
+            {
+              "name": "Send OTP for User",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('user_phone', '1234567890');",
+                      "    pm.collectionVariables.set('user_otp', response.otp);",
+                      "    console.log('User OTP sent:', response.otp);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-User-Type",
+                    "value": "user"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"John Doe\",\n  \"phone\": \"1234567890\",\n  \"password\": \"password123\",\n  \"profileImage\": \"https://example.com/profile.jpg\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/send-otp",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "send-otp"]
+                }
+              }
+            },
+            {
+              "name": "Verify OTP and Create User",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('user_token', response.token);",
+                      "    pm.collectionVariables.set('user_id', response.user.id);",
+                      "    console.log('User created:', response.user.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-User-Type",
+                    "value": "user"
+                  },
+                  {
+                    "key": "X-Phone",
+                    "value": "1234567890"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"otp\": \"{{user_otp}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/verify-otp",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "verify-otp"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 Advertiser Registration",
+          "item": [
+            {
+              "name": "Send OTP for Advertiser",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('advertiser_phone', '0987654321');",
+                      "    pm.collectionVariables.set('advertiser_otp', response.otp);",
+                      "    console.log('Advertiser OTP sent:', response.otp);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-User-Type",
+                    "value": "advertiser"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Jane Business\",\n  \"phone\": \"0987654321\",\n  \"password\": \"password123\",\n  \"storeName\": \"Jane's Store\",\n  \"storeImage\": \"https://example.com/store.jpg\",\n  \"description\": \"Best store in town\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/send-otp",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "send-otp"]
+                }
+              }
+            },
+            {
+              "name": "Verify OTP and Create Advertiser",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('advertiser_token', response.token);",
+                      "    pm.collectionVariables.set('advertiser_id', response.user.id);",
+                      "    console.log('Advertiser created:', response.user.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-User-Type",
+                    "value": "advertiser"
+                  },
+                  {
+                    "key": "X-Phone",
+                    "value": "0987654321"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"otp\": \"{{advertiser_otp}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/verify-otp",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "verify-otp"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.3 Login Flows",
+          "item": [
+            {
+              "name": "User Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('user_token', response.token);",
+                      "    pm.collectionVariables.set('user_id', response.user.id);",
+                      "    console.log('User logged in:', response.user.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"1234567890\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "login"]
+                }
+              }
+            },
+            {
+              "name": "Advertiser Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('advertiser_token', response.token);",
+                      "    pm.collectionVariables.set('advertiser_id', response.user.id);",
+                      "    console.log('Advertiser logged in:', response.user.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"0987654321\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "login"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📝 3. Content Creation Flow (Advertisers Only)",
+      "item": [
+        {
+          "name": "3.1 Category Management",
+          "item": [
+            {
+              "name": "Get All Categories",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/categories",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "categories"]
+                }
+              }
+            },
+            {
+              "name": "Create Category (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('category_id', response.category.id);",
+                      "    console.log('Category created:', response.category.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Test Category\",\n  \"description\": \"A test category for testing purposes\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/categories",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "categories"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.2 Post Creation",
+          "item": [
+            {
+              "name": "Create Post",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('post_id', response.post.id);",
+                      "    console.log('Post created:', response.post.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{advertiser_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "advertiser_id",
+                      "value": "{{advertiser_id}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "category_id",
+                      "value": "{{category_id}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "type",
+                      "value": "post",
+                      "type": "text"
+                    },
+                    {
+                      "key": "title",
+                      "value": "Test Product",
+                      "type": "text"
+                    },
+                    {
+                      "key": "description",
+                      "value": "This is a test product description",
+                      "type": "text"
+                    },
+                    {
+                      "key": "price",
+                      "value": "99.99",
+                      "type": "text"
+                    },
+                    {
+                      "key": "expiration_date",
+                      "value": "2024-12-31T23:59:59Z",
+                      "type": "text"
+                    },
+                    {
+                      "key": "with_reservation",
+                      "value": "true",
+                      "type": "text"
+                    },
+                    {
+                      "key": "reservation_time",
+                      "value": "2024-12-30T23:59:59Z",
+                      "type": "text"
+                    },
+                    {
+                      "key": "reservation_limit",
+                      "value": "10",
+                      "type": "text"
+                    },
+                    {
+                      "key": "media",
+                      "type": "file",
+                      "src": []
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/posts",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posts"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.3 Reel Creation",
+          "item": [
+            {
+              "name": "Create Reel",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('reel_id', response.reel.id);",
+                      "    console.log('Reel created:', response.reel.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{advertiser_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "advertiser_id",
+                      "value": "{{advertiser_id}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "category_id",
+                      "value": "{{category_id}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "type",
+                      "value": "reel",
+                      "type": "text"
+                    },
+                    {
+                      "key": "title",
+                      "value": "Test Reel",
+                      "type": "text"
+                    },
+                    {
+                      "key": "description",
+                      "value": "This is a test reel description",
+                      "type": "text"
+                    },
+                    {
+                      "key": "media",
+                      "type": "file",
+                      "src": []
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/reels",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "reels"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔍 4. Content Discovery Flow",
+      "item": [
+        {
+          "name": "4.1 Browse Posts",
+          "item": [
+            {
+              "name": "Get All Posts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/posts",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posts"]
+                }
+              }
+            },
+            {
+              "name": "Get Posts by Category",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/posts?category_id={{category_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posts"]
+                },
+                "query": [
+                  {
+                    "key": "category_id",
+                    "value": "{{category_id}}"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Get Posts with Reservations",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/posts?with_reservation=true",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posts"]
+                },
+                "query": [
+                  {
+                    "key": "with_reservation",
+                    "value": "true"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Get Post Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/posts/{{post_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posts", "{{post_id}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2 Browse Reels",
+          "item": [
+            {
+              "name": "Get All Reels",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/reels",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "reels"]
+                }
+              }
+            },
+            {
+              "name": "Get Reel Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/reels/{{reel_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "reels", "{{reel_id}}"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📅 5. Reservation Flow",
+      "item": [
+        {
+          "name": "5.1 Check Availability",
+          "item": [
+            {
+              "name": "Check Post Reservation Availability",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reservations/availability/{{post_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "reservations", "availability", "{{post_id}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.2 Create Reservation",
+          "item": [
+            {
+              "name": "Create Reservation",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('reservation_id', response.reservation.id);",
+                      "    console.log('Reservation created:', response.reservation.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client_id\": \"{{user_id}}\",\n  \"post_id\": \"{{post_id}}\",\n  \"client_type\": \"user\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/reservations",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "reservations"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.3 Manage Reservations",
+          "item": [
+            {
+              "name": "Get User Reservations",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reservations/client/{{user_id}}?client_type=user",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "reservations", "client", "{{user_id}}"]
+                },
+                "query": [
+                  {
+                    "key": "client_type",
+                    "value": "user"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Get Post Reservations (Advertiser)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{advertiser_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reservations/post/{{post_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "reservations", "post", "{{post_id}}"]
+                }
+              }
+            },
+            {
+              "name": "Cancel Reservation",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reservations/{{reservation_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "reservations", "{{reservation_id}}"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💬 6. Engagement Flow",
+      "item": [
+        {
+          "name": "6.1 Comments",
+          "item": [
+            {
+              "name": "Add Comment",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"post_id\": \"{{post_id}}\",\n  \"user_id\": \"{{user_id}}\",\n  \"user_type\": \"user\",\n  \"content\": \"Great product! I love it.\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/comments",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "comments"]
+                }
+              }
+            },
+            {
+              "name": "Get Post Comments",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/comments?post_id={{post_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "comments"]
+                },
+                "query": [
+                  {
+                    "key": "post_id",
+                    "value": "{{post_id}}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.2 Likes & Saves",
+          "item": [
+            {
+              "name": "Like Post",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"user_type\": \"user\",\n  \"post_id\": \"{{post_id}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/posts/{{post_id}}/like",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posts", "{{post_id}}", "like"]
+                }
+              }
+            },
+            {
+              "name": "Save Post",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client_id\": \"{{user_id}}\",\n  \"client_type\": \"user\",\n  \"post_id\": \"{{post_id}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/posts/save",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posts", "save"]
+                }
+              }
+            },
+            {
+              "name": "Get Saved Posts",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/posts/saved/{{user_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posts", "saved", "{{user_id}}"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💰 7. Points System Flow",
+      "item": [
+        {
+          "name": "7.1 User Points",
+          "item": [
+            {
+              "name": "Get User Points",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/points/user/{{user_id}}?user_type=user",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "user", "{{user_id}}"]
+                },
+                "query": [
+                  {
+                    "key": "user_type",
+                    "value": "user"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Get User Points History",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/points/user/{{user_id}}/history?user_type=user",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "user", "{{user_id}}", "history"]
+                },
+                "query": [
+                  {
+                    "key": "user_type",
+                    "value": "user"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.2 Admin Points Management",
+          "item": [
+            {
+              "name": "Get All User Points (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/points/admin/all",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "admin", "all"]
+                }
+              }
+            },
+            {
+              "name": "Adjust User Points (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"user_type\": \"user\",\n  \"points_change\": 100,\n  \"transaction_type\": \"admin_adjustment\",\n  \"description\": \"Bonus points for testing\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/points/admin/adjust",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "admin", "adjust"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.3 Point Request System (NEW - The Missing Bridge)",
+          "item": [
+            {
+              "name": "Request Points from Admin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('point_request_id', response.data.requestId);",
+                      "    console.log('Point request created:', response.data.requestId);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"request_type\": \"bonus_points\",\n  \"points_amount\": 500,\n  \"reason\": \"Completed all daily challenges for a week\",\n  \"supporting_evidence\": \"https://example.com/screenshot.jpg\",\n  \"additional_details\": {\n    \"challenge_week\": \"2024-W01\",\n    \"challenges_completed\": 7\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/points/request",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "request"]
+                }
+              }
+            },
+            {
+              "name": "Get My Point Requests",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/points/my-requests",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "my-requests"]
+                }
+              }
+            },
+            {
+              "name": "Get Point Request Details",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/points/request/{{point_request_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "request", "{{point_request_id}}"]
+                }
+              }
+            },
+            {
+              "name": "Admin: Get All Point Requests",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/points/admin/requests",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "admin", "requests"]
+                }
+              }
+            },
+            {
+              "name": "Admin: Get Point Request Statistics",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/points/admin/requests/stats",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "admin", "requests", "stats"]
+                }
+              }
+            },
+            {
+              "name": "Admin: Process Point Request (Approve)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"approve\",\n  \"admin_notes\": \"Valid request, user completed weekly challenge\",\n  \"points_adjustment\": 500\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/points/admin/requests/{{point_request_id}}/process",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "admin", "requests", "{{point_request_id}}", "process"]
+                }
+              }
+            },
+            {
+              "name": "Admin: Process Point Request (Reject)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"reject\",\n  \"admin_notes\": \"Request rejected: insufficient evidence provided\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/points/admin/requests/{{point_request_id}}/process",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "admin", "requests", "{{point_request_id}}", "process"]
+                }
+              }
+            },
+            {
+              "name": "Admin: Process Point Request (Under Review)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"review\",\n  \"admin_notes\": \"Request under review: need additional verification\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/points/admin/requests/{{point_request_id}}/process",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "admin", "requests", "{{point_request_id}}", "process"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.4 Dashboard Point Request Management",
+          "item": [
+            {
+              "name": "Dashboard: Get Point Request Statistics",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/dashboard/stats",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "dashboard", "stats"]
+                }
+              }
+            },
+            {
+              "name": "Dashboard: Get All Point Requests (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/dashboard/points/requests",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "dashboard", "points", "requests"]
+                }
+              }
+            },
+            {
+              "name": "Dashboard: Process Point Request (Admin)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"approve\",\n  \"admin_notes\": \"Approved via dashboard\",\n  \"points_adjustment\": 500\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/dashboard/points/requests/{{point_request_id}}/process",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "dashboard", "points", "requests", "{{point_request_id}}", "process"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "👤 8. Profile Management Flow",
+      "item": [
+        {
+          "name": "8.1 User Profiles",
+          "item": [
+            {
+              "name": "Get User Profile",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/users/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "profile"]
+                }
+              }
+            },
+            {
+              "name": "Update User Profile",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{user_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"full_name\": \"John Doe Updated\",\n  \"profile_image\": \"https://example.com/new-profile.jpg\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "profile"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "8.2 Advertiser Profiles",
+          "item": [
+            {
+              "name": "Get Advertiser Profile",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{advertiser_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/users/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "profile"]
+                }
+              }
+            },
+            {
+              "name": "Get My Posts (Advertiser)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{advertiser_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/users/profile/my-posts",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "profile", "my-posts"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📊 9. Dashboard & Analytics Flow",
+      "item": [
+        {
+          "name": "9.1 Admin Dashboard",
+          "item": [
+            {
+              "name": "Get All Users (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/users",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "users"]
+                }
+              }
+            },
+            {
+              "name": "Get All Advertisers (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/advertisers",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "advertisers"]
+                }
+              }
+            },
+            {
+              "name": "Get All Posts (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/posts/admin/all",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posts", "admin", "all"]
+                }
+              }
+            },
+            {
+              "name": "Get All Reservations (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reservations/admin/all",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "reservations", "admin", "all"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "9.2 Statistics",
+          "item": [
+            {
+              "name": "Get Post Statistics (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/posts/admin/stats",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posts", "admin", "stats"]
+                }
+              }
+            },
+            {
+              "name": "Get Reservation Statistics (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reservations/admin/stats",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "reservations", "admin", "stats"]
+                }
+              }
+            },
+            {
+              "name": "Get Points Statistics (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/points/admin/stats",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "points", "admin", "stats"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔄 10. Utility & Testing Flow",
+      "item": [
+        {
+          "name": "10.1 Password Reset",
+          "item": [
+            {
+              "name": "Forgot Password - User",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"1234567890\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/forgot-password/user",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "forgot-password", "user"]
+                }
+              }
+            },
+            {
+              "name": "Forgot Password - Advertiser",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"0987654321\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/forgot-password/advertiser",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "forgot-password", "advertiser"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "10.2 Testing Utilities",
+          "item": [
+            {
+              "name": "Get Latest OTP (Development)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/users/otp/1234567890/verification/user",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "otp", "1234567890", "verification", "user"]
+                }
+              }
+            },
+            {
+              "name": "Cleanup OTPs",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/users/cleanup-otps",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "cleanup-otps"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

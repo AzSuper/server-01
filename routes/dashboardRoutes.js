@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const userController = require('../controllers/userController');
 const postController = require('../controllers/postController');
 const reservationController = require('../controllers/reservationController');
 const CommentController = require('../controllers/commentController');
+const pointsController = require('../controllers/pointsController');
 
 // Dashboard overview statistics (public)
 router.get('/stats', async (req, res) => {
@@ -45,6 +46,15 @@ router.get('/stats', async (req, res) => {
                 COUNT(CASE WHEN created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as comments_last_7_days
         `);
 
+        // Get point request statistics (NEW)
+        const pointRequestStats = await pool.query(`
+            SELECT 
+                COUNT(*) as total_point_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_point_requests,
+                COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_point_requests
+            FROM point_requests
+        `);
+
         res.json({
             status: 'success',
             message: 'Dashboard statistics retrieved successfully',
@@ -53,6 +63,7 @@ router.get('/stats', async (req, res) => {
                 posts: postStats.rows[0],
                 reservations: reservationStats.rows[0],
                 comments: commentStats.rows[0],
+                pointRequests: pointRequestStats.rows[0], // NEW
                 timestamp: new Date().toISOString()
             }
         });
@@ -66,22 +77,37 @@ router.get('/stats', async (req, res) => {
 });
 
 // User management endpoints (admin)
-router.get('/users', authenticateToken, userController.getAllUsers);
-router.get('/users/advertisers', authenticateToken, userController.getAllAdvertisers);
-router.get('/users/combined', authenticateToken, userController.getAllUsersCombined);
-router.put('/users/:id/verification', authenticateToken, userController.updateUserVerificationStatus);
-router.delete('/users/:id', authenticateToken, userController.deleteUser);
+router.get('/users', authenticateToken, requireAdmin, userController.getAllUsers);
+router.get('/users/advertisers', authenticateToken, requireAdmin, userController.getAllAdvertisers);
+router.get('/users/combined', authenticateToken, requireAdmin, userController.getAllUsersCombined);
+router.put('/users/:id/verification', authenticateToken, requireAdmin, userController.updateUserVerificationStatus);
+router.delete('/users/:id', authenticateToken, requireAdmin, userController.deleteUser);
 
 // Post management endpoints (admin)
-router.get('/posts', authenticateToken, postController.getAllPostsAdmin);
-router.get('/posts/stats', authenticateToken, postController.getPostStats);
+router.get('/posts', authenticateToken, requireAdmin, postController.getAllPostsAdmin);
+router.get('/posts/stats', authenticateToken, requireAdmin, postController.getPostStats);
 
 // Reservation management endpoints (admin)
-router.get('/reservations', authenticateToken, reservationController.getAllReservationsAdmin);
-router.get('/reservations/stats', authenticateToken, reservationController.getReservationStats);
+router.get('/reservations', authenticateToken, requireAdmin, reservationController.getAllReservationsAdmin);
+router.get('/reservations/stats', authenticateToken, requireAdmin, reservationController.getReservationStats);
 
 // Comment management endpoints (admin)
-router.get('/comments', authenticateToken, CommentController.getAllCommentsAdmin);
-router.get('/comments/stats', authenticateToken, CommentController.getCommentStats);
+router.get('/comments', authenticateToken, requireAdmin, CommentController.getAllCommentsAdmin);
+router.get('/comments/stats', authenticateToken, requireAdmin, CommentController.getCommentStats);
+
+// Point management endpoints (admin) - NEW
+router.get('/points', authenticateToken, requireAdmin, pointsController.getAllUserPoints);
+router.get('/points/stats', authenticateToken, requireAdmin, pointsController.getPointsStats);
+router.put('/points/:id/adjust', authenticateToken, requireAdmin, pointsController.adminAdjustPoints);
+
+// Point request management endpoints (admin) - NEW - THE MISSING BRIDGE
+router.get('/points/requests', authenticateToken, requireAdmin, pointsController.getAllPointRequests);
+router.get('/points/requests/stats', authenticateToken, requireAdmin, pointsController.getPointRequestStats);
+router.put('/points/requests/:requestId/process', authenticateToken, requireAdmin, pointsController.processPointRequest);
+
+// Withdrawal management endpoints (admin)
+router.get('/points/withdrawals', authenticateToken, requireAdmin, pointsController.getWithdrawalRequests);
+router.post('/points/withdrawals/:id/approve', authenticateToken, requireAdmin, pointsController.approveWithdrawal);
+router.post('/points/withdrawals/:id/reject', authenticateToken, requireAdmin, pointsController.rejectWithdrawal);
 
 module.exports = router;
